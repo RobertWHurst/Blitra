@@ -1,4 +1,4 @@
-package tui
+package blitra
 
 type Border struct {
 	TopLeft     string
@@ -11,8 +11,8 @@ type Border struct {
 	Right       string
 }
 
-func NewBorder(topLeft, top, topRight, bottomLeft, bottom, bottomRight, left, right string) Border {
-	return Border{
+func NewBorder(topLeft, top, topRight, bottomLeft, bottom, bottomRight, left, right string) *Border {
+	return &Border{
 		TopLeft:     topLeft,
 		Top:         top,
 		TopRight:    topRight,
@@ -24,18 +24,18 @@ func NewBorder(topLeft, top, topRight, bottomLeft, bottom, bottomRight, left, ri
 	}
 }
 
-func DoubleBorder() Border {
+func DoubleBorder() *Border {
 	return NewBorder("╔", "═", "╗", "╚", "═", "╝", "║", "║")
 }
 
-func RoundBorder() Border {
+func RoundBorder() *Border {
 	return NewBorder("╭", "─", "╮", "╰", "─", "╯", "│", "│")
 }
 
-func BoldBorder() Border {
+func BoldBorder() *Border {
 	return NewBorder("┏", "━", "┓", "┗", "━", "┛", "┃", "┃")
 }
 
-func LightBorder() Border {
+func LightBorder() *Border {
 	return NewBorder("┌", "─", "┐", "└", "─", "┘", "│", "│")
 }

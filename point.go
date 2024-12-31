@@ -1,3 +1,6 @@
 package blitra
 
-type Point = [2]int
+type Point struct {
+	X int
+	Y int
+}

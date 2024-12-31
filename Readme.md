@@ -3,6 +3,8 @@
 A immediate mode renderer for the terminal - Provides a framework for creating
 beautiful terminal applications with simplicity and ease.
 
+## Overview
+
 A point of emphasis in Blitra's design is allowing the developer to control when
 frames are drawn, and in which go routine to do so. A lot of other TUI
 frameworks impose a render loop, which adds complexity around synchronization;
@@ -23,8 +25,8 @@ import (
 func main() {
   helloView := blitra.View(helloViewOptions, func(viewState) {
 
-    messageDiv := blitra.Division(messageDivOptions, func(messageDivState) {
-      if (messageDivState.Clicked) {
+    messageDiv := blitra.Box(messageBoxOptions, func(messageBoxState) {
+      if (messageBoxState.Clicked) {
         return "You're clicking the message!"
       }
       return "Hello World!"
@@ -47,7 +49,7 @@ var helloViewOptions = blitra.ViewOpts{
   BackgroundColor: '#000',
 }
 
-var messageDivOptions = blitra.DivisionOptions{
+var messageBoxOptions = blitra.DivisionOptions{
   Border: blitra.BorderDouble,
   Padding: 1,
 }
@@ -114,7 +116,7 @@ And when clicked:
 ╰══════════════════════════════════════════════════════════════════════════════╯
 ```
 
-# How Blitra Works
+## How Blitra Works
 
 Using Blitra begins with creating a view. To do so the View function is called,
 with view options - things like layout, and styling. Views are the root of all
@@ -132,6 +134,7 @@ UIs created with Blitra, and are intented to be used on demand.
     - struct implementing Node
     - nil
     - a slice of any containing a mix of the above
+  - This is most often a built in component like a box.
 
 - Node - Any struct which implements the needed methods to be wrapped by an
   element. These methods are:

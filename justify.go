@@ -3,9 +3,10 @@ package blitra
 type Justify int
 
 const (
-	StretchJustify Justify = iota
-	StartJustify
+	StartJustify Justify = iota
 	CenterJustify
 	EndJustify
 	SpaceBetweenJustify
+	SpaceAroundJustify
+	SpaceEvenlyJustify
 )
