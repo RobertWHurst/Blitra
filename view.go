@@ -3,6 +3,9 @@ package blitra
 import (
 	"errors"
 	"os"
+	"time"
+
+	"golang.org/x/term"
 )
 
 // Options for controlling how a view is rendered.
@@ -68,16 +71,32 @@ type ViewOpts struct {
 
 // Can be used to control rendering of the view.
 type ViewHandle struct {
-	fn           func(ViewState) any
-	tty          *os.File
-	screenBuffer *ScreenBuffer
+	fn            func(ViewState) any
+	tty           *os.File
+	realStdout    *os.File
+	stdoutChan    chan string
+	screenBuffer  *ScreenBuffer
+	lastFrameTime time.Time
 
-	x      int
-	y      int
-	width  int
-	height int
-	opts   ViewOpts
-	state  ViewState
+	x             int
+	y             int
+	width         int
+	height        int
+	opts          ViewOpts
+	state         ViewState
+	terminalState *term.State
+}
+
+// Contains information about the current state of the view.
+type ViewState struct {
+	// The delta time between the last frame and the one before it.
+	DeltaTime float64
+	// Indicates at which column and row the view was clicked.
+	ClickAt Point
+	// Indicates if the view was clicked.
+	Clicked bool
+	// Indicates which keys are currently pressed.
+	KeysPressed []Key
 }
 
 // Creates a new view and returns a handle to it.
@@ -109,14 +128,19 @@ func (v *ViewHandle) Bind() error {
 	v.height = VOr(v.opts.Height, termHeight)
 	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height)
 
-	Bind(v)
+	PrepareScreen(v)
+
+	// v.terminalState = MustSwitchTTYToRaw(v.tty)
+
 	return nil
 }
 
 // Unbinds the view from the terminal restoring the terminal to its previous
 // state.
 func (v *ViewHandle) Unbind() {
-	Unbind(v)
+	// MustRestoreTTYToNormal(v.tty, v.terminalState)
+
+	RestoreScreen(v)
 }
 
 // Renders a frame based on the current state of the view.
@@ -124,6 +148,13 @@ func (v *ViewHandle) RenderFrame() {
 	if v.tty == nil {
 		panic("cannot render. The view is not bound")
 	}
+
+	frameTime := time.Now()
+	if v.lastFrameTime.IsZero() {
+		v.lastFrameTime = frameTime.Add(-time.Second / 60)
+	}
+	v.state.DeltaTime = frameTime.Sub(v.lastFrameTime).Seconds()
+	v.lastFrameTime = frameTime
 
 	rootElement := ElementFromRenderable(viewRenderable{
 		view: v,
@@ -136,16 +167,7 @@ func (v *ViewHandle) RenderFrame() {
 
 	UpdateLayout(rootElement)
 	Render(v, rootElement)
-}
 
-// Contains information about the current state of the view.
-type ViewState struct {
-	// Indicates at which column and row the view was clicked.
-	ClickAt Point
-	// Indicates if the view was clicked.
-	Clicked bool
-	// Indicates which keys are currently pressed.
-	KeysPressed []Key
 }
 
 type viewRenderable struct {

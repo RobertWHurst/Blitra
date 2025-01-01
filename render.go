@@ -19,14 +19,14 @@ const (
 	escResetBGColor    = "\033[49m"
 )
 
-func Bind(view *ViewHandle) {
+func PrepareScreen(view *ViewHandle) {
 	fmt.Fprint(view.tty, escHideCursor)
 	if view.opts.TargetBuffer == SecondaryBuffer {
 		fmt.Fprint(view.tty, escSecondaryScreen)
 	}
 }
 
-func Unbind(view *ViewHandle) {
+func RestoreScreen(view *ViewHandle) {
 	if view.opts.TargetBuffer == SecondaryBuffer {
 		fmt.Fprint(view.tty, escPrimaryScreen)
 	}
@@ -143,10 +143,6 @@ func renderView(view *ViewHandle) {
 			}
 
 			fmt.Fprintf(view.tty, escMoveCursor, y+r+1, x+c+1)
-
-			// debug marker
-			// fmt.Fprint(view.tty, "X")
-			// fmt.Fprintf(view.tty, escMoveCursor, y+r+1, x+c+1)
 
 			// Set colors
 			if cell.ForegroundColor != nil {
