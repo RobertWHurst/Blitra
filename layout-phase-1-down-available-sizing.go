@@ -25,14 +25,14 @@ func AvailableSizingVisitor(element *Element) {
 		height = 0
 	}
 
-	if element.Style.Width != nil && width > *element.Style.Width {
+	if element.Style.Width != nil {
 		width = *element.Style.Width
 	}
 	if element.Style.MaxWidth != nil && width > *element.Style.MaxWidth {
 		width = *element.Style.MaxWidth
 	}
 
-	if element.Style.Height != nil && height > *element.Style.Height {
+	if element.Style.Height != nil {
 		height = *element.Style.Height
 	}
 	if element.Style.MaxHeight != nil && height > *element.Style.MaxHeight {

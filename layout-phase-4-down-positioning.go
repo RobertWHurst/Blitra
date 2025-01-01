@@ -8,42 +8,87 @@ func PositioningVisitor(element *Element) {
 	axis := V(element.Style.Axis)
 	alignment := V(element.Style.Align)
 	justification := V(element.Style.Justify)
-	remainingChildWidth := element.Size.Width - element.IntrinsicSize.Width
-	remainingChildHeight := element.Size.Height - element.IntrinsicSize.Height
+	gap := V(element.Style.Gap)
 	innerX := element.Position.X + element.GetLeftEdgeWidth()
 	innerY := element.Position.Y + element.GetTopEdgeHeight()
 	innerHeight := element.Size.Height - element.GetEdgeHeight()
 	innerWidth := element.Size.Width - element.GetEdgeWidth()
 
-	// Justification requires us to calculate a gap offset to properly space the
-	// children. It also requires us to adjust the innerX or innerY position for
-	// some modes.
-	gapOffset := 0
+	// We start with the negative gap as we only want to add the gap between
+	// children.
+	allChildrenWidth := -gap
+	allChildrenHeight := -gap
+	for childElement := range element.ChildrenIter {
+		childWidth := childElement.Size.Width
+		childHeight := childElement.Size.Height
+
+		if axis == HorizontalAxis {
+			allChildrenWidth += childWidth + gap
+			if childHeight > allChildrenHeight {
+				allChildrenHeight = childHeight
+			}
+		} else {
+			allChildrenHeight += childHeight + gap
+			if childWidth > allChildrenWidth {
+				allChildrenWidth = childWidth
+			}
+		}
+	}
+
+	// const (
+	// 	StartJustify Justify = iota
+	// 	CenterJustify
+	// 	EndJustify
+	// 	SpaceBetweenJustify
+	// 	SpaceAroundJustify
+	// 	SpaceEvenlyJustify
+	// )
+
+	justificationOffset := 0
+	justificationGap := 0
 	switch justification {
+	case StartJustify:
+		// NOTE: we don't need to do anything for start justification.
+	case CenterJustify:
+		if axis == HorizontalAxis {
+			justificationOffset = (innerWidth - allChildrenWidth) / 2
+		} else {
+			justificationOffset = (innerHeight - allChildrenHeight) / 2
+		}
+	case EndJustify:
+		if axis == HorizontalAxis {
+			justificationOffset = innerWidth - allChildrenWidth
+		} else {
+			justificationOffset = innerHeight - allChildrenHeight
+		}
 	case SpaceBetweenJustify:
 		if element.ChildCount != 1 {
 			if axis == HorizontalAxis {
-				gapOffset = remainingChildWidth / (element.ChildCount - 1)
+				justificationGap = (innerWidth - allChildrenWidth) / (element.ChildCount - 1)
 			} else {
-				gapOffset = remainingChildHeight / (element.ChildCount - 1)
+				justificationGap = (innerHeight - allChildrenHeight) / (element.ChildCount - 1)
 			}
 		}
 	case SpaceAroundJustify:
 		if axis == HorizontalAxis {
-			gapOffset = remainingChildWidth / element.ChildCount
-			innerX += gapOffset / 2
+			justificationGap = (innerWidth - allChildrenWidth) / element.ChildCount
 		} else {
-			gapOffset = remainingChildHeight / element.ChildCount
-			innerY += gapOffset / 2
+			justificationGap = (innerHeight - allChildrenHeight) / element.ChildCount
 		}
+		justificationOffset = justificationGap / 2
 	case SpaceEvenlyJustify:
 		if axis == HorizontalAxis {
-			gapOffset = remainingChildWidth / (element.ChildCount + 1)
-			innerX += gapOffset
+			justificationGap = (innerWidth - allChildrenWidth) / (element.ChildCount + 1)
 		} else {
-			gapOffset = remainingChildHeight / (element.ChildCount + 1)
-			innerY += gapOffset
+			justificationGap = (innerHeight - allChildrenHeight) / (element.ChildCount + 1)
 		}
+		justificationOffset = justificationGap
+	}
+
+	if axis == HorizontalAxis {
+		innerX += justificationOffset
+	} else {
+		innerY += justificationOffset
 	}
 
 	// Position the children.
@@ -81,42 +126,12 @@ func PositioningVisitor(element *Element) {
 			}
 		}
 
-		// Justification resolves X for horizontal axis, and Y for vertical axis.
-		switch justification {
-		case StartJustify:
-			if axis == HorizontalAxis {
-				childElement.Position.X = innerX
-			} else {
-				childElement.Position.Y = innerY
-			}
-		case CenterJustify:
-			if axis == HorizontalAxis {
-				xOffset := (innerWidth - childElement.Size.Width) / 2
-				childElement.Position.X = innerX + xOffset
-			} else {
-				yOffset := (innerHeight - childElement.Size.Height) / 2
-				childElement.Position.Y = innerY + yOffset
-			}
-		case EndJustify:
-			if axis == HorizontalAxis {
-				xOffset := innerWidth - childElement.Size.Width
-				childElement.Position.X = innerX + xOffset
-			} else {
-				yOffset := innerHeight - childElement.Size.Height
-				childElement.Position.Y = innerY + yOffset
-			}
-		case SpaceBetweenJustify, SpaceAroundJustify, SpaceEvenlyJustify:
-			if axis == HorizontalAxis {
-				childElement.Position.X = innerX
-			} else {
-				childElement.Position.Y = innerY
-			}
-		}
-
 		if axis == HorizontalAxis {
-			innerX += childElement.Size.Width + V(element.Style.Gap) + gapOffset
+			childElement.Position.X = innerX
+			innerX += childElement.Size.Width + gap + justificationGap
 		} else {
-			innerY += childElement.Size.Height + V(element.Style.Gap) + gapOffset
+			childElement.Position.Y = innerY
+			innerY += childElement.Size.Height + gap + justificationGap
 		}
 	}
 }

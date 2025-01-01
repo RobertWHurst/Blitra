@@ -27,11 +27,17 @@ func FinalSizingVisitor(element *Element) {
 	// sizes.
 	axis := V(element.Style.Axis)
 	alignment := V(element.Style.Align)
+	gap := V(element.Style.Gap)
+
+	innerIntrinsicWidth := element.IntrinsicSize.Width - element.GetEdgeWidth()
+	innerIntrinsicHeight := element.IntrinsicSize.Height - element.GetEdgeHeight()
+	innerAvailableWidth := element.AvailableSize.Width - element.GetEdgeWidth()
+	innerAvailableHeight := element.AvailableSize.Height - element.GetEdgeHeight()
 
 	// Calculate the total size of all children that do not grow, and count the
 	// ones that do. Also calculate the children element's final size.
-	allChildrenWidth := 0
-	allChildrenHeight := 0
+	allChildrenWidth := -gap
+	allChildrenHeight := -gap
 	growCount := 0
 	for childElement := range element.ChildrenIter {
 
@@ -43,9 +49,9 @@ func FinalSizingVisitor(element *Element) {
 		// intrinsic size of the parent.
 		if alignment == StretchAlign {
 			if axis == HorizontalAxis {
-				childElement.Size.Height = element.IntrinsicSize.Height - element.GetEdgeHeight() - element.GetGapHeight()
+				childElement.Size.Height = innerIntrinsicHeight
 			} else {
-				childElement.Size.Width = element.IntrinsicSize.Width - element.GetEdgeWidth() - element.GetGapWidth()
+				childElement.Size.Width = innerIntrinsicWidth
 			}
 		}
 
@@ -59,16 +65,13 @@ func FinalSizingVisitor(element *Element) {
 		// Regardless of if the child grows, take it's lateral size if larger
 		// than the current total lateral size, replace it.
 		if axis == HorizontalAxis {
-			if !childGrows {
-				allChildrenWidth += childElement.Size.Width
-			}
+			allChildrenWidth += gap
+			allChildrenWidth += childElement.Size.Width + gap
 			if childElement.Size.Height > allChildrenHeight {
 				allChildrenHeight = childElement.Size.Height
 			}
 		} else {
-			if !childGrows {
-				allChildrenHeight += childElement.Size.Height
-			}
+			allChildrenHeight += childElement.Size.Height + gap
 			if childElement.Size.Width > allChildrenWidth {
 				allChildrenWidth = childElement.Size.Width
 			}
@@ -81,14 +84,14 @@ func FinalSizingVisitor(element *Element) {
 	var clipWidth int
 	var clipHeight int
 	if axis == HorizontalAxis {
-		remainderWidth := element.AvailableSize.Width - allChildrenWidth
+		remainderWidth := innerAvailableWidth - allChildrenWidth
 		if remainderWidth < 0 {
 			clipWidth = -(remainderWidth / element.ChildCount)
 		} else if growCount > 0 {
 			growWidth = remainderWidth / growCount
 		}
 	} else {
-		remainderHeight := element.AvailableSize.Height - allChildrenHeight
+		remainderHeight := innerAvailableHeight - allChildrenHeight
 		if remainderHeight < 0 {
 			clipHeight = -(remainderHeight / element.ChildCount)
 		} else if growCount > 0 {
@@ -100,8 +103,11 @@ func FinalSizingVisitor(element *Element) {
 		childGrows := V(childElement.Style.Grow)
 
 		if childGrows {
-			childElement.Size.Width += growWidth
-			childElement.Size.Height += growHeight
+			if axis == HorizontalAxis {
+				childElement.Size.Width += growWidth
+			} else {
+				childElement.Size.Height += growHeight
+			}
 		}
 		childElement.Size.Width -= clipWidth
 		childElement.Size.Height -= clipHeight
@@ -112,12 +118,12 @@ func FinalSizingVisitor(element *Element) {
 		if childElement.Size.Height < 0 {
 			childElement.Size.Height = 0
 		}
-		if childElement.Size.Width > childElement.AvailableSize.Width {
-			childElement.Size.Width = childElement.AvailableSize.Width
-		}
-		if childElement.Size.Height > childElement.AvailableSize.Height {
-			childElement.Size.Height = childElement.AvailableSize.Height
-		}
+		// if childElement.Size.Width > childElement.AvailableSize.Width {
+		// 	childElement.Size.Width = childElement.AvailableSize.Width
+		// }
+		// if childElement.Size.Height > childElement.AvailableSize.Height {
+		// 	childElement.Size.Height = childElement.AvailableSize.Height
+		// }
 	}
 
 	if element.Parent == nil {

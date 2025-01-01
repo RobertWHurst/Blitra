@@ -25,6 +25,8 @@ type ViewOpts struct {
 	TopPadding *int
 	// Padding in rows from the bottom edge of the view.
 	BottomPadding *int
+	// Sets the gap between child elements.
+	Gap *int
 
 	// Sets how child elements will be aligned along the axis. The default is
 	// Stretch.
@@ -164,6 +166,8 @@ func (v *ViewHandle) RenderFrame() {
 	}
 	rootElement.AvailableSize.Width = v.width
 	rootElement.AvailableSize.Height = v.height
+	rootElement.IntrinsicSize.Width = v.width
+	rootElement.IntrinsicSize.Height = v.height
 
 	UpdateLayout(rootElement)
 	Render(v, rootElement)
@@ -183,6 +187,7 @@ func (v viewRenderable) Style() Style {
 		RightPadding:    OrP(v.view.opts.RightPadding, v.view.opts.Padding),
 		TopPadding:      OrP(v.view.opts.TopPadding, v.view.opts.Padding),
 		BottomPadding:   OrP(v.view.opts.BottomPadding, v.view.opts.Padding),
+		Gap:             v.view.opts.Gap,
 		Align:           v.view.opts.Align,
 		Justify:         v.view.opts.Justify,
 		BackgroundColor: v.view.opts.BackgroundColor,

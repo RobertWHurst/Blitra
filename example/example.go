@@ -16,6 +16,7 @@ func main() {
 		Axis:            b.P(b.VerticalAxis),
 		Align:           b.P(b.CenterAlign),
 		Justify:         b.P(b.CenterJustify),
+		Gap:             b.P(2),
 		BackgroundColor: b.P("#002"),
 		TargetBuffer:    b.SecondaryBuffer,
 	}, func(ctx b.ViewState) any {
@@ -59,6 +60,7 @@ func main() {
 			b.Box(b.BoxOpts{
 				DEBUG_ID:  "box-2",
 				TextColor: b.P("#f00"),
+				Width:     b.P(10),
 			}, func(_ b.BoxState) any {
 				return "Delta time is: " + strconv.FormatFloat(ctx.DeltaTime, 'f', 6, 64)
 			}),

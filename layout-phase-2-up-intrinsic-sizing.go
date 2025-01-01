@@ -6,11 +6,15 @@ package blitra
 // If the element is text, the intrinsic dimensions are calculated based on the
 // text size without size constraints.
 func IntrinsicSizingVisitor(element *Element) {
+	if element.Parent == nil {
+		return
+	}
+
 	if element.SourceText != nil {
 		_, info := ApplyWrap(
 			V(element.Style.TextWrap),
 			V(element.Style.Ellipsis),
-			nil,
+			&element.AvailableSize,
 			*element.SourceText,
 		)
 
@@ -42,13 +46,13 @@ func IntrinsicSizingVisitor(element *Element) {
 	width += element.GetEdgeWidth() + element.GetGapWidth()
 	height += element.GetEdgeHeight() + element.GetGapHeight()
 
-	if element.Style.Width != nil && width < *element.Style.Width {
+	if element.Style.Width != nil {
 		width = *element.Style.Width
 	}
 	if element.Style.MinWidth != nil && width < *element.Style.MinWidth {
 		width = *element.Style.MinWidth
 	}
-	if element.Style.Height != nil && height < *element.Style.Height {
+	if element.Style.Height != nil {
 		height = *element.Style.Height
 	}
 	if element.Style.MinHeight != nil && height < *element.Style.MinHeight {
