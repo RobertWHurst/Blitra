@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"os/signal"
 	"time"
 
 	b "github.com/RobertWHurst/blitra"
@@ -11,35 +14,41 @@ func main() {
 	view := b.View(b.ViewOpts{
 		Align:           b.P(b.CenterAlign),
 		Justify:         b.P(b.CenterJustify),
-		BackgroundColor: b.P("#fef"),
+		BackgroundColor: b.P("#002"),
 		TargetBuffer:    b.SecondaryBuffer,
 	}, func(ctx b.ViewState) any {
 
 		return b.Box(b.BoxOpts{
 			DEBUG_ID:        "box",
 			Align:           b.P(b.CenterAlign),
-			Gap:             b.P(1),
+			TopPadding:      b.P(1),
+			BottomPadding:   b.P(1),
+			LeftPadding:     b.P(2),
+			RightPadding:    b.P(2),
+			Gap:             b.P(2),
 			Border:          b.DoubleBorder(),
 			TextColor:       b.P("#005"),
-			BackgroundColor: b.P("#afa"),
+			BackgroundColor: b.P("#eef"),
 		}, func(_ b.BoxState) any {
+			now := time.Now()
+
 			return []any{
 
 				b.Box(b.BoxOpts{
 					DEBUG_ID: "sub-box-1",
 				}, func(_ b.BoxState) any {
-					return "Example APP:"
+					return "The time is:"
 				}),
 
 				b.Box(b.BoxOpts{
 					DEBUG_ID:        "sub-box-2",
 					Border:          b.DoubleBorder(),
-					BackgroundColor: b.P("#ffa"),
+					BackgroundColor: b.P("#ccd"),
 				}, func(_ b.BoxState) any {
 					if ctx.Clicked {
 						return "Hello, mouse click!"
 					}
-					return "Hello, world!"
+					return now.Format("2006-01-02 15:04:05.000")
 				}),
 			}
 		})
@@ -50,7 +59,27 @@ func main() {
 		panic(err)
 	}
 
-	view.RenderFrame()
-	time.Sleep(5 * time.Second)
+	osSignalChan := make(chan os.Signal, 1)
+	signal.Notify(osSignalChan, os.Interrupt)
+
+	var frameCount int
+	var frameTime time.Duration
+loop:
+	for {
+		select {
+		case <-osSignalChan:
+			break loop
+		default:
+		}
+		start := time.Now()
+		view.RenderFrame()
+		elapsed := time.Since(start)
+		frameTime += elapsed
+		frameCount += 1
+		time.Sleep(time.Second / 60)
+	}
+
 	view.Unbind()
+
+	fmt.Println("Average frame time:", frameTime/time.Duration(frameCount))
 }

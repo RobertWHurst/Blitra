@@ -71,19 +71,20 @@ type ViewHandle struct {
 	fn           func(ViewState) any
 	tty          *os.File
 	screenBuffer *ScreenBuffer
-	x            int
-	y            int
-	width        int
-	height       int
-	opts         ViewOpts
-	state        ViewState
+
+	x      int
+	y      int
+	width  int
+	height int
+	opts   ViewOpts
+	state  ViewState
 }
 
 // Creates a new view and returns a handle to it.
 func View(opts ViewOpts, fn func(ViewState) any) ViewHandle {
 	return ViewHandle{
-		opts: opts,
 		fn:   fn,
+		opts: opts,
 	}
 }
 
@@ -107,6 +108,7 @@ func (v *ViewHandle) Bind() error {
 	v.width = VOr(v.opts.Width, termWidth)
 	v.height = VOr(v.opts.Height, termHeight)
 	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height)
+
 	Bind(v)
 	return nil
 }

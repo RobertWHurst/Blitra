@@ -34,22 +34,10 @@ func Unbind(view *ViewHandle) {
 }
 
 func Render(view *ViewHandle, element *Element) {
-	clearScreen(view)
 	element.VisitContainerElementsDown(func(el *Element) {
 		renderElement(view, el)
 	})
 	renderView(view)
-}
-
-func clearScreen(view *ViewHandle) {
-	x := view.x
-	y := view.y
-	width := view.width
-	height := view.height
-	for r := 0; r < height; r += 1 {
-		fmt.Fprintf(view.tty, escMoveCursor, y+r, x)
-		fmt.Fprintf(view.tty, escErase, width)
-	}
 }
 
 func renderElement(view *ViewHandle, element *Element) {
@@ -124,10 +112,10 @@ func renderBorders(view *ViewHandle, element *Element) {
 
 func renderText(view *ViewHandle, element *Element) {
 	sb := view.screenBuffer
-	x := element.Position.X + element.GetLeftEdgeWidth()
-	y := element.Position.Y + element.GetTopEdgeHeight()
-	w := element.Size.Width - element.GetEdgeWidth()
-	h := element.Size.Height - element.GetEdgeHeight()
+	x := element.Position.X
+	y := element.Position.Y
+	w := element.Size.Width
+	h := element.Size.Height
 
 	text, width, height := strToCells(element.Text, element.Style, w, h)
 	for r := 0; r < height; r += 1 {
@@ -149,9 +137,16 @@ func renderView(view *ViewHandle) {
 
 	for r := 0; r < height; r += 1 {
 		for c := 0; c < width; c += 1 {
-			cell := sb.Get(x+c, y+r)
+			cell, isDirty := sb.Get(x+c, y+r)
+			if !isDirty {
+				continue
+			}
 
-			fmt.Fprintf(view.tty, escMoveCursor, y+r, x+c)
+			fmt.Fprintf(view.tty, escMoveCursor, y+r+1, x+c+1)
+
+			// debug marker
+			// fmt.Fprint(view.tty, "X")
+			// fmt.Fprintf(view.tty, escMoveCursor, y+r+1, x+c+1)
 
 			// Set colors
 			if cell.ForegroundColor != nil {
@@ -173,6 +168,8 @@ func renderView(view *ViewHandle) {
 			fmt.Fprint(view.tty, string(cell.Character))
 		}
 	}
+
+	sb.MarkFrame()
 }
 
 func strToCells(s string, style Style, width, height int) ([][]ScreenCell, int, int) {
