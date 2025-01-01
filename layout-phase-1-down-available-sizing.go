@@ -15,8 +15,6 @@ func AvailableSizingVisitor(element *Element) {
 
 	width := element.AvailableSize.Width
 	height := element.AvailableSize.Height
-	width -= element.GetEdgeWidth() + element.GetGapWidth()
-	height -= element.GetEdgeHeight() + element.GetGapHeight()
 
 	if width < 0 {
 		width = 0
@@ -39,12 +37,12 @@ func AvailableSizingVisitor(element *Element) {
 		height = *element.Style.MaxHeight
 	}
 
+	innerWidth := width - element.LeftEdge() - element.RightEdge()
+	innerHeight := height - element.TopEdge() - element.BottomEdge()
 	for childElement := range element.ChildrenIter {
-		childElement.AvailableSize.Width = width
-		childElement.AvailableSize.Height = height
-	}
+		childElement.AvailableSize.Width = innerWidth
+		childElement.AvailableSize.Height = innerHeight
 
-	for childElement := range element.ChildrenIter {
 		if childElement.Style.TextColor == nil {
 			childElement.Style.TextColor = element.Style.TextColor
 		}

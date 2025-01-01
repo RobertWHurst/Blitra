@@ -9,10 +9,10 @@ func PositioningVisitor(element *Element) {
 	alignment := V(element.Style.Align)
 	justification := V(element.Style.Justify)
 	gap := V(element.Style.Gap)
-	innerX := element.Position.X + element.GetLeftEdgeWidth()
-	innerY := element.Position.Y + element.GetTopEdgeHeight()
-	innerHeight := element.Size.Height - element.GetEdgeHeight()
-	innerWidth := element.Size.Width - element.GetEdgeWidth()
+	innerX := element.Position.X + element.LeftEdge()
+	innerY := element.Position.Y + element.TopEdge()
+	innerWidth := element.Size.Width - element.LeftEdge() - element.RightEdge()
+	innerHeight := element.Size.Height - element.TopEdge() - element.BottomEdge()
 
 	// We start with the negative gap as we only want to add the gap between
 	// children.

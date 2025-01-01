@@ -29,10 +29,12 @@ func FinalSizingVisitor(element *Element) {
 	alignment := V(element.Style.Align)
 	gap := V(element.Style.Gap)
 
-	innerIntrinsicWidth := element.IntrinsicSize.Width - element.GetEdgeWidth()
-	innerIntrinsicHeight := element.IntrinsicSize.Height - element.GetEdgeHeight()
-	innerAvailableWidth := element.AvailableSize.Width - element.GetEdgeWidth()
-	innerAvailableHeight := element.AvailableSize.Height - element.GetEdgeHeight()
+	edgeWidth := element.LeftEdge() + element.RightEdge()
+	edgeHeight := element.TopEdge() + element.BottomEdge()
+	innerIntrinsicWidth := element.IntrinsicSize.Width - edgeWidth
+	innerIntrinsicHeight := element.IntrinsicSize.Height - edgeHeight
+	innerAvailableWidth := element.AvailableSize.Width - edgeWidth
+	innerAvailableHeight := element.AvailableSize.Height - edgeHeight
 
 	// Calculate the total size of all children that do not grow, and count the
 	// ones that do. Also calculate the children element's final size.

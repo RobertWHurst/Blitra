@@ -47,10 +47,10 @@ func renderElement(view *ViewHandle, element *Element) {
 
 func renderBorders(view *ViewHandle, element *Element) {
 	sb := view.screenBuffer
-	x := element.Position.X
-	y := element.Position.Y
-	width := element.Size.Width
-	height := element.Size.Height
+	x := element.Position.X + V(element.Style.LeftMargin)
+	y := element.Position.Y + V(element.Style.TopMargin)
+	width := element.Size.Width - V(element.Style.LeftMargin) - V(element.Style.RightMargin)
+	height := element.Size.Height - V(element.Style.TopMargin) - V(element.Style.BottomMargin)
 
 	if element.Style.LeftBorder != nil {
 		bCells, bWidth, bHeight := strToCells(element.Style.LeftBorder.Left, element.Style, -1, -1)
@@ -112,10 +112,10 @@ func renderBorders(view *ViewHandle, element *Element) {
 
 func renderText(view *ViewHandle, element *Element) {
 	sb := view.screenBuffer
-	x := element.Position.X
-	y := element.Position.Y
-	w := element.Size.Width
-	h := element.Size.Height
+	x := element.Position.X + V(element.Style.LeftMargin)
+	y := element.Position.Y + V(element.Style.TopMargin)
+	w := element.Size.Width - V(element.Style.LeftMargin) - V(element.Style.RightMargin)
+	h := element.Size.Height - V(element.Style.TopMargin) - V(element.Style.BottomMargin)
 
 	text, width, height := strToCells(element.Text, element.Style, w, h)
 	for r := 0; r < height; r += 1 {
@@ -174,7 +174,7 @@ func strToCells(s string, style Style, width, height int) ([][]ScreenCell, int, 
 	sWidth := 0
 	for _, line := range lines {
 		lineLen := len([]rune(line))
-		if lineLen > width {
+		if lineLen > sWidth {
 			sWidth = lineLen
 		}
 	}

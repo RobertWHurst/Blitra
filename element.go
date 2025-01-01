@@ -162,80 +162,76 @@ func (e *Element) VisitContainerElementsDownThenUp(downFn, upFn func(*Element)) 
 	e.traverseElements(&downFn, &upFn)
 }
 
-// Gets the width of the left edge (left margin, left padding, and left border).
-func (e *Element) GetLeftEdgeWidth() int {
-	return V(e.Style.LeftMargin) + V(e.Style.LeftPadding) + VMap(e.Style.LeftBorder, func(b Border) int {
+func (e *Element) LeftMargin() int {
+	return V(e.Style.LeftMargin)
+}
+
+func (e *Element) RightMargin() int {
+	return V(e.Style.RightMargin)
+}
+
+func (e *Element) TopMargin() int {
+	return V(e.Style.TopMargin)
+}
+
+func (e *Element) BottomMargin() int {
+	return V(e.Style.BottomMargin)
+}
+
+func (e *Element) LeftBorderWidth() int {
+	return VMap(e.Style.LeftBorder, func(b Border) int {
 		return len([]rune(b.Left))
 	})
 }
 
-// Gets the width of the right edge (right margin, right padding, and right border).
-func (e *Element) GetRightEdgeWidth() int {
-	return V(e.Style.RightMargin) + V(e.Style.RightPadding) + VMap(e.Style.RightBorder, func(b Border) int {
+func (e *Element) RightBorderWidth() int {
+	return VMap(e.Style.RightBorder, func(b Border) int {
 		return len([]rune(b.Right))
 	})
 }
 
-// Gets the height of the top edge (top margin, top padding, and top border).
-func (e *Element) GetTopEdgeHeight() int {
-	return V(e.Style.TopMargin) + V(e.Style.TopPadding) + VMap(e.Style.TopBorder, func(b Border) int {
+func (e *Element) TopBorderHeight() int {
+	return VMap(e.Style.TopBorder, func(b Border) int {
 		return len([]rune(b.Top))
 	})
 }
 
-// Gets the height of the bottom edge (bottom margin, bottom padding, and bottom border).
-func (e *Element) GetBottomEdgeHeight() int {
-	return V(e.Style.BottomMargin) + V(e.Style.BottomPadding) + VMap(e.Style.BottomBorder, func(b Border) int {
+func (e *Element) BottomBorderHeight() int {
+	return VMap(e.Style.BottomBorder, func(b Border) int {
 		return len([]rune(b.Bottom))
 	})
 }
 
-// Gets the width taken up by the element's edges (margin, padding, border).
-func (e *Element) GetEdgeWidth() int {
-	width := 0
-	width += V(e.Style.LeftMargin)
-	width += V(e.Style.RightMargin)
-	width += V(e.Style.LeftPadding)
-	width += V(e.Style.RightPadding)
-	width += VMap(e.Style.LeftBorder, func(b Border) int {
-		return len([]rune(b.Left))
-	})
-	width += VMap(e.Style.RightBorder, func(b Border) int {
-		return len([]rune(b.Right))
-	})
-	return width
+func (e *Element) LeftPadding() int {
+	return V(e.Style.LeftPadding)
 }
 
-// Gets the height taken up by the element's edges (margin, padding, border).
-func (e *Element) GetEdgeHeight() int {
-	height := 0
-	height += V(e.Style.TopMargin)
-	height += V(e.Style.BottomMargin)
-	height += V(e.Style.TopPadding)
-	height += V(e.Style.BottomPadding)
-	height += VMap(e.Style.TopBorder, func(b Border) int {
-		return len([]rune(b.Top))
-	})
-	height += VMap(e.Style.BottomBorder, func(b Border) int {
-		return len([]rune(b.Bottom))
-	})
-	return height
+func (e *Element) RightPadding() int {
+	return V(e.Style.RightPadding)
 }
 
-// Gets the width taken up by the gaps between the element's children.
-func (e *Element) GetGapWidth() int {
-	if V(e.Style.Axis) == VerticalAxis || e.Style.Gap == nil {
-		return 0
-	}
-	return V(e.Style.Gap) * (e.ChildCount - 1)
+func (e *Element) TopPadding() int {
+	return V(e.Style.TopPadding)
 }
 
-// Gets the height taken up by the gaps between the element's children.
-func (e *Element) GetGapHeight() int {
-	if V(e.Style.Axis) == HorizontalAxis || e.Style.Gap == nil {
-		return 0
-	}
-	return V(e.Style.Gap) * (e.ChildCount - 1)
+func (e *Element) BottomPadding() int {
+	return V(e.Style.BottomPadding)
+}
+
+func (e *Element) LeftEdge() int {
+	return e.LeftMargin() + e.LeftPadding() + e.LeftBorderWidth()
+}
+
+func (e *Element) RightEdge() int {
+	return e.RightMargin() + e.RightPadding() + e.RightBorderWidth()
+}
+
+func (e *Element) TopEdge() int {
+	return e.TopMargin() + e.TopPadding() + e.TopBorderHeight()
+}
+
+func (e *Element) BottomEdge() int {
+	return e.BottomMargin() + e.BottomPadding() + e.BottomBorderHeight()
 }
 
 func (e *Element) traverseElements(downFn, upFn *func(*Element)) {

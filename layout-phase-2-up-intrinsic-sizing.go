@@ -22,29 +22,36 @@ func IntrinsicSizingVisitor(element *Element) {
 		return
 	}
 
-	width := 0
-	height := 0
+	allChildrenWidth := 0
+	allChildrenHeight := 0
 	axis := V(element.Style.Axis)
 
 	for childElement := range element.ChildrenIter {
 		childWidth := childElement.IntrinsicSize.Width
 		childHeight := childElement.IntrinsicSize.Height
-
 		if axis == HorizontalAxis {
-			width += childWidth
-			if childHeight > height {
-				height = childHeight
+			allChildrenWidth += childWidth
+			if childHeight > allChildrenHeight {
+				allChildrenHeight = childHeight
 			}
 		} else {
-			height += childHeight
-			if childWidth > width {
-				width = childWidth
+			allChildrenHeight += childHeight
+			if childWidth > allChildrenWidth {
+				allChildrenWidth = childWidth
 			}
 		}
 	}
 
-	width += element.GetEdgeWidth() + element.GetGapWidth()
-	height += element.GetEdgeHeight() + element.GetGapHeight()
+	width := allChildrenWidth + element.LeftEdge() + element.RightEdge()
+	height := allChildrenHeight + element.TopEdge() + element.BottomEdge()
+
+	if element.ChildCount > 1 {
+		if axis == HorizontalAxis {
+			width += V(element.Style.Gap) * (element.ChildCount - 1)
+		} else {
+			height += V(element.Style.Gap) * (element.ChildCount - 1)
+		}
+	}
 
 	if element.Style.Width != nil {
 		width = *element.Style.Width
