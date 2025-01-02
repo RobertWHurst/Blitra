@@ -121,6 +121,10 @@ type TestRenderable struct {
 
 var _ blitra.Renderable = TestRenderable{}
 
+func (r TestRenderable) ID() string {
+	return "TestRenderable"
+}
+
 func (r TestRenderable) Style() blitra.Style {
 	return blitra.Style{}
 }

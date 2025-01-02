@@ -35,15 +35,6 @@ func PositioningVisitor(element *Element) {
 		}
 	}
 
-	// const (
-	// 	StartJustify Justify = iota
-	// 	CenterJustify
-	// 	EndJustify
-	// 	SpaceBetweenJustify
-	// 	SpaceAroundJustify
-	// 	SpaceEvenlyJustify
-	// )
-
 	justificationOffset := 0
 	justificationGap := 0
 	switch justification {

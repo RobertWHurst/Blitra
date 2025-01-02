@@ -9,7 +9,7 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/example/example.go",
+      "program": "${workspaceFolder}/examples/bouncing-clock/main.go",
       "showRegisters": false,
       "hideSystemGoroutines": true,
       "console": "integratedTerminal"

@@ -1,42 +1,54 @@
 package blitra
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
+
+// represents the kind of element.
+type ElementKind int
+
+const (
+	// represents a container element.
+	ContainerElementKind ElementKind = iota
+	// represents a text element.
+	TextElementKind
+)
 
 // Used by Biltra to represent each renderable as an element. Elements are
 // arranged in a tree structure and are traversed to compute layout and render
 // the final output.
 type Element struct {
-	// The parent element. Is a root element if nil.
-	Parent *Element
-	// The previous sibling element. If nil, this is the first child.
-	Previous *Element
-	// The next sibling element. If nil, this is the last child.
-	Next *Element
-	// The first child element.
-	FirstChild *Element
-	// The last child element.
-	LastChild *Element
-	// The number of children.
-	ChildCount int
+	Kind  ElementKind
+	ID    string
+	Style Style
 
-	// For text elements, the initial text value is stored here. It will
-	// be converted to runes and stored in the Runes field after rendering.
-	SourceText *string
+	Parent     *Element
+	Previous   *Element
+	Next       *Element
+	FirstChild *Element
+	LastChild  *Element
+	ChildCount int
 
 	IntrinsicSize Size
 	AvailableSize Size
-	Size          Size
-	Position      Point
-	Text          string
+	SourceText    string
 
-	// The style of the element. Used to compute layout and visual style.
-	Style Style
+	Size     Size
+	Position Point
+	Text     string
 }
 
-func ElementFromRenderable(renderable Renderable, state ViewState) *Element {
+type ElementIndex map[string]*Element
+
+func ElementTreeAndIndexFromRenderable(renderable Renderable, state ViewState) (*Element, ElementIndex, error) {
+	elementIndex := map[string]*Element{}
 	rootElement := &Element{
+		Kind:  ContainerElementKind,
+		ID:    renderable.ID(),
 		Style: renderable.Style(),
 	}
+	elementIndex[rootElement.ID] = rootElement
 
 	type pending struct {
 		parent *Element
@@ -57,8 +69,11 @@ func ElementFromRenderable(renderable Renderable, state ViewState) *Element {
 
 		case string:
 			element := &Element{
-				SourceText: &v,
+				Kind:       TextElementKind,
+				ID:         v,
+				SourceText: v,
 			}
+			elementIndex[v] = element
 			head.parent.AddChild(element)
 			head = head.next
 
@@ -75,11 +90,14 @@ func ElementFromRenderable(renderable Renderable, state ViewState) *Element {
 		default:
 			renderable, ok := v.(Renderable)
 			if !ok {
-				panic("Struct type does not implement the Renderable interface: " + reflect.TypeOf(v).String())
+				return nil, nil, fmt.Errorf("struct type does not implement the Renderable interface: %s", reflect.TypeOf(v).String())
 			}
 			element := &Element{
+				Kind:  ContainerElementKind,
+				ID:    renderable.ID(),
 				Style: renderable.Style(),
 			}
+			elementIndex[element.ID] = element
 			head.parent.AddChild(element)
 			tail.next = &pending{
 				parent: element,
@@ -90,7 +108,7 @@ func ElementFromRenderable(renderable Renderable, state ViewState) *Element {
 		}
 	}
 
-	return rootElement
+	return rootElement, elementIndex, nil
 }
 
 // Adds a child element. Sets up all the necessary relationship pointers.

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"os"
 	"time"
-
-	"golang.org/x/term"
 )
+
+const viewID = "__ROOT__"
 
 // Options for controlling how a view is rendered.
 type ViewOpts struct {
@@ -75,35 +75,53 @@ type ViewOpts struct {
 type ViewHandle struct {
 	fn            func(ViewState) any
 	tty           *os.File
-	realStdout    *os.File
-	stdoutChan    chan string
 	screenBuffer  *ScreenBuffer
 	lastFrameTime time.Time
 
-	x             int
-	y             int
-	width         int
-	height        int
-	opts          ViewOpts
-	state         ViewState
-	terminalState *term.State
+	x      int
+	y      int
+	width  int
+	height int
+	opts   ViewOpts
+	state  ViewState
 }
 
 // Contains information about the current state of the view.
 type ViewState struct {
-	// The delta time between the last frame and the one before it.
-	DeltaTime float64
-	// Indicates at which column and row the view was clicked.
-	ClickAt Point
-	// Indicates if the view was clicked.
-	Clicked bool
-	// Indicates which keys are currently pressed.
-	KeysPressed []Key
+	elementIndex ElementIndex
+	deltaTime    float64
+	// events       any
+}
+
+func (v *ViewState) DeltaTime() float64 {
+	return v.deltaTime
+}
+
+func (v *ViewState) Size() Size {
+	element, ok := v.elementIndex[viewID]
+	if !ok {
+		return Size{}
+	}
+	return Size{
+		Width:  element.Size.Width,
+		Height: element.Size.Height,
+	}
+}
+
+func (v *ViewState) ElementSize(id string) Size {
+	element, ok := v.elementIndex[id]
+	if !ok {
+		return Size{}
+	}
+	return Size{
+		Width:  element.Size.Width - element.LeftMargin() - element.RightMargin(),
+		Height: element.Size.Height - element.TopMargin() - element.BottomMargin(),
+	}
 }
 
 // Creates a new view and returns a handle to it.
-func View(opts ViewOpts, fn func(ViewState) any) ViewHandle {
-	return ViewHandle{
+func View(opts ViewOpts, fn func(ViewState) any) *ViewHandle {
+	return &ViewHandle{
 		fn:   fn,
 		opts: opts,
 	}
@@ -132,8 +150,6 @@ func (v *ViewHandle) Bind() error {
 
 	PrepareScreen(v)
 
-	// v.terminalState = MustSwitchTTYToRaw(v.tty)
-
 	return nil
 }
 
@@ -146,7 +162,7 @@ func (v *ViewHandle) Unbind() {
 }
 
 // Renders a frame based on the current state of the view.
-func (v *ViewHandle) RenderFrame() {
+func (v *ViewHandle) RenderFrame() error {
 	if v.tty == nil {
 		panic("cannot render. The view is not bound")
 	}
@@ -155,32 +171,36 @@ func (v *ViewHandle) RenderFrame() {
 	if v.lastFrameTime.IsZero() {
 		v.lastFrameTime = frameTime.Add(-time.Second / 60)
 	}
-	v.state.DeltaTime = frameTime.Sub(v.lastFrameTime).Seconds()
+	v.state.deltaTime = frameTime.Sub(v.lastFrameTime).Seconds()
 	v.lastFrameTime = frameTime
 
-	rootElement := ElementFromRenderable(viewRenderable{
-		view: v,
-	}, v.state)
-	if rootElement == nil {
-		return
+	rootElement, elementIndex, err := ElementTreeAndIndexFromRenderable(&viewRenderable{view: v}, v.state)
+	if err != nil || rootElement == nil {
+		return err
 	}
+	v.state.elementIndex = elementIndex
 	rootElement.AvailableSize.Width = v.width
 	rootElement.AvailableSize.Height = v.height
-	rootElement.IntrinsicSize.Width = v.width
-	rootElement.IntrinsicSize.Height = v.height
+	rootElement.IntrinsicSize = rootElement.AvailableSize
+	rootElement.Size = rootElement.AvailableSize
 
 	UpdateLayout(rootElement)
 	Render(v, rootElement)
 
+	return nil
 }
 
 type viewRenderable struct {
 	view *ViewHandle
 }
 
-var _ Renderable = viewRenderable{}
+var _ Renderable = &viewRenderable{}
 
-func (v viewRenderable) Style() Style {
+func (v *viewRenderable) ID() string {
+	return viewID
+}
+
+func (v *viewRenderable) Style() Style {
 	return Style{
 		Axis:            v.view.opts.Axis,
 		LeftPadding:     OrP(v.view.opts.LeftPadding, v.view.opts.Padding),
@@ -195,6 +215,6 @@ func (v viewRenderable) Style() Style {
 	}
 }
 
-func (v viewRenderable) Render(state ViewState) any {
+func (v *viewRenderable) Render(state ViewState) any {
 	return v.view.fn(state)
 }

@@ -1,7 +1,6 @@
 package blitra
 
 import (
-	"math"
 	"reflect"
 	"strings"
 	"unicode"
@@ -21,30 +20,27 @@ const (
 	NoWrap
 )
 
-func ApplyWrap(mode TextWrap, useEllipsis bool, maxDimensions *Size, text string) (string, WrapInfo) {
+func ApplyWrap(mode TextWrap, useEllipsis bool, size Size, text string) (string, WrapInfo) {
 	switch mode {
 	case WordWrap:
-		return ApplyWordOrCharWrap(true, useEllipsis, maxDimensions, text)
+		return ApplyWordOrCharWrap(true, useEllipsis, size, text)
 	case CharacterWrap:
-		return ApplyWordOrCharWrap(false, useEllipsis, maxDimensions, text)
+		return ApplyWordOrCharWrap(false, useEllipsis, size, text)
 	case NoWrap:
-		return ApplyNoWrap(useEllipsis, maxDimensions, text)
+		return ApplyNoWrap(useEllipsis, size, text)
 	}
 	panic("Unknown TextWrap mode: " + reflect.TypeOf(mode).String())
 }
 
-func ApplyWordOrCharWrap(useWordWrap bool, useEllipsis bool, maxDimensions *Size, text string) (string, WrapInfo) {
-	if len(text) == 0 {
-		return "", WrapInfo{
-			Dimensions: Size{
-				Width:  0,
-				Height: 0,
-			},
+func ApplyWordOrCharWrap(useWordWrap bool, useEllipsis bool, size Size, text string) (string, WrapInfo) {
+	maxWidth := size.Width
+	maxHeight := size.Height
+	if len(text) == 0 || maxWidth < 1 || maxHeight < 1 {
+		return text, WrapInfo{
+			Size:        size,
 			HasEllipsis: false,
 		}
 	}
-
-	maxWidth, maxHeight := normalizeDimensions(maxDimensions)
 
 	// Convert the text to a slice of runes, and append a newline rune
 	// to force the last word to be processed.
@@ -213,7 +209,7 @@ charLoop:
 
 	// Return the textLines as a single string, and the wrap info.
 	return strings.Join(textLines, "\n"), WrapInfo{
-		Dimensions: Size{
+		Size: Size{
 			Width:  width,
 			Height: len(textLines),
 		},
@@ -221,8 +217,15 @@ charLoop:
 	}
 }
 
-func ApplyNoWrap(useEllipsis bool, maxDimensions *Size, text string) (string, WrapInfo) {
-	maxWidth, maxHeight := normalizeDimensions(maxDimensions)
+func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo) {
+	maxWidth := size.Width
+	maxHeight := size.Height
+	if len(text) == 0 || maxWidth < 1 || maxHeight < 1 {
+		return text, WrapInfo{
+			Size:        size,
+			HasEllipsis: false,
+		}
+	}
 
 	lines := [][]rune{}
 	line := []rune{}
@@ -288,7 +291,7 @@ func ApplyNoWrap(useEllipsis bool, maxDimensions *Size, text string) (string, Wr
 	}
 
 	return strings.Join(textLines, "\n"), WrapInfo{
-		Dimensions: Size{
+		Size: Size{
 			Width:  width,
 			Height: len(textLines),
 		},
@@ -297,21 +300,6 @@ func ApplyNoWrap(useEllipsis bool, maxDimensions *Size, text string) (string, Wr
 }
 
 type WrapInfo struct {
-	Dimensions  Size
+	Size        Size
 	HasEllipsis bool
-}
-
-func normalizeDimensions(dimensions *Size) (int, int) {
-	if dimensions == nil {
-		return math.MaxInt, math.MaxInt
-	}
-	width := dimensions.Width
-	height := dimensions.Height
-	if dimensions.Width == 0 {
-		width = math.MaxInt
-	}
-	if dimensions.Height == 0 {
-		height = math.MaxInt
-	}
-	return width, height
 }

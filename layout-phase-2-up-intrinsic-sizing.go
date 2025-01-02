@@ -10,15 +10,15 @@ func IntrinsicSizingVisitor(element *Element) {
 		return
 	}
 
-	if element.SourceText != nil {
+	if element.Kind == TextElementKind {
 		_, info := ApplyWrap(
 			V(element.Style.TextWrap),
 			V(element.Style.Ellipsis),
-			&element.AvailableSize,
-			*element.SourceText,
+			element.AvailableSize,
+			element.SourceText,
 		)
 
-		element.IntrinsicSize = info.Dimensions
+		element.IntrinsicSize = info.Size
 		return
 	}
 
@@ -66,6 +66,6 @@ func IntrinsicSizingVisitor(element *Element) {
 		height = *element.Style.MinHeight
 	}
 
-	element.IntrinsicSize.Width = width
-	element.IntrinsicSize.Height = height
+	element.IntrinsicSize.Width = max(width, 0)
+	element.IntrinsicSize.Height = max(height, 0)
 }

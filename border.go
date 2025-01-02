@@ -11,31 +11,31 @@ type Border struct {
 	Right       string
 }
 
-func NewBorder(topLeft, top, topRight, bottomLeft, bottom, bottomRight, left, right string) *Border {
+func NewBorder(topLeft, topRight, bottomLeft, bottomRight, left, right, top, bottom string) *Border {
 	return &Border{
 		TopLeft:     topLeft,
-		Top:         top,
 		TopRight:    topRight,
 		BottomLeft:  bottomLeft,
-		Bottom:      bottom,
 		BottomRight: bottomRight,
 		Left:        left,
 		Right:       right,
+		Top:         top,
+		Bottom:      bottom,
 	}
 }
 
 func DoubleBorder() *Border {
-	return NewBorder("╔", "═", "╗", "╚", "═", "╝", "║", "║")
+	return NewBorder("╔", "╗", "╚", "╝", "║", "║", "═", "═")
 }
 
 func RoundBorder() *Border {
-	return NewBorder("╭", "─", "╮", "╰", "─", "╯", "│", "│")
+	return NewBorder("╭", "╮", "╰", "╯", "│", "│", "─", "─")
 }
 
 func BoldBorder() *Border {
-	return NewBorder("┏", "━", "┓", "┗", "━", "┛", "┃", "┃")
+	return NewBorder("┏", "┓", "┗", "┛", "┃", "┃", "━", "━")
 }
 
 func LightBorder() *Border {
-	return NewBorder("┌", "─", "┐", "└", "─", "┘", "│", "│")
+	return NewBorder("┌", "┐", "└", "┘", "│", "│", "─", "─")
 }

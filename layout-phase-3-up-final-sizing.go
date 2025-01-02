@@ -11,15 +11,15 @@ func FinalSizingVisitor(element *Element) {
 
 	// If this element has text, calculate its final dimensions based on the
 	// text size after being wrapped to fit the available width.
-	if element.SourceText != nil {
+	if element.Kind == TextElementKind {
 		text, info := ApplyWrap(
 			V(element.Style.TextWrap),
 			V(element.Style.Ellipsis),
-			&element.AvailableSize,
-			*element.SourceText,
+			element.AvailableSize,
+			element.SourceText,
 		)
 		element.Text = text
-		element.Size = info.Dimensions
+		element.Size = info.Size
 		return
 	}
 
@@ -51,9 +51,9 @@ func FinalSizingVisitor(element *Element) {
 		// intrinsic size of the parent.
 		if alignment == StretchAlign {
 			if axis == HorizontalAxis {
-				childElement.Size.Height = innerIntrinsicHeight
+				childElement.Size.Height = max(innerIntrinsicHeight, 0)
 			} else {
-				childElement.Size.Width = innerIntrinsicWidth
+				childElement.Size.Width = max(innerIntrinsicWidth, 0)
 			}
 		}
 
@@ -120,16 +120,11 @@ func FinalSizingVisitor(element *Element) {
 		if childElement.Size.Height < 0 {
 			childElement.Size.Height = 0
 		}
-		// if childElement.Size.Width > childElement.AvailableSize.Width {
-		// 	childElement.Size.Width = childElement.AvailableSize.Width
-		// }
-		// if childElement.Size.Height > childElement.AvailableSize.Height {
-		// 	childElement.Size.Height = childElement.AvailableSize.Height
-		// }
-	}
-
-	if element.Parent == nil {
-		element.Size.Width = element.AvailableSize.Width
-		element.Size.Height = element.AvailableSize.Height
+		if childElement.Size.Width > childElement.AvailableSize.Width {
+			childElement.Size.Width = childElement.AvailableSize.Width
+		}
+		if childElement.Size.Height > childElement.AvailableSize.Height {
+			childElement.Size.Height = childElement.AvailableSize.Height
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package blitra
 
 type BoxRenderable struct {
+	id   string
 	opts BoxOpts
 	fn   func(ctx BoxState) any
 }
@@ -91,18 +92,23 @@ type BoxOpts struct {
 	DEBUG_ID string
 }
 
-var _ Renderable = BoxRenderable{}
+var _ Renderable = &BoxRenderable{}
 
 // Allows dividing views into horizontal or vertical sections. Also provides
 // layout options as to control spacing and alignment.
-func Box(opts BoxOpts, fn func(ctx BoxState) any) BoxRenderable {
-	return BoxRenderable{
+func Box(id string, opts BoxOpts, fn func(ctx BoxState) any) *BoxRenderable {
+	return &BoxRenderable{
+		id:   id,
 		opts: opts,
 		fn:   fn,
 	}
 }
 
-func (b BoxRenderable) Style() Style {
+func (b *BoxRenderable) ID() string {
+	return b.id
+}
+
+func (b *BoxRenderable) Style() Style {
 	return Style{
 		DEBUG_ID: b.opts.DEBUG_ID,
 
@@ -146,7 +152,7 @@ func (b BoxRenderable) Style() Style {
 }
 
 // Implements the Renderable interface.
-func (b BoxRenderable) Render(state ViewState) any {
+func (b *BoxRenderable) Render(state ViewState) any {
 	boxState := BoxState{}
 	return b.fn(boxState)
 }
