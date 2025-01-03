@@ -7,30 +7,43 @@ import (
 )
 
 const (
-	escHideCursor      = "\033[?25l"
-	escShowCursor      = "\033[?25h"
-	escSecondaryScreen = "\033[?1049h"
-	escPrimaryScreen   = "\033[?1049l"
-	escMoveCursor      = "\033[%d;%dH"
-	escErase           = "\033[%dX"
-	escSetFGTrueColor  = "\033[38;2;%d;%d;%dm"
-	escSetBGTrueColor  = "\033[48;2;%d;%d;%dm"
-	escResetFGColor    = "\033[39m"
-	escResetBGColor    = "\033[49m"
+	escEnableMouse  = "\x1b[?1006h"
+	escDisableMouse = "\x1b[?1006l"
+
+	escEnableFocusTracking  = "\x1b[?1004h"
+	escDisableFocusTracking = "\x1b[?1004l"
+
+	escHideCursor = "\x1b[?25l"
+	escShowCursor = "\x1b[?25h"
+
+	escSecondaryScreen = "\x1b[?1049h"
+	escPrimaryScreen   = "\x1b[?1049l"
+
+	escMoveCursor = "\x1b[%d;%dH"
+	escErase      = "\x1b[%dX"
+
+	escSetFGTrueColor = "\x1b[38;2;%d;%d;%dm"
+	escSetBGTrueColor = "\x1b[48;2;%d;%d;%dm"
+	escResetFGColor   = "\x1b[39m"
+	escResetBGColor   = "\x1b[49m"
 )
 
 func PrepareScreen(view *ViewHandle) {
-	fmt.Fprint(view.tty, escHideCursor)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escHideCursor)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escEnableMouse)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escEnableFocusTracking)
 	if view.opts.TargetBuffer == SecondaryBuffer {
-		fmt.Fprint(view.tty, escSecondaryScreen)
+		fmt.Fprint(view.stdioManager.targetTTYStdout, escSecondaryScreen)
 	}
 }
 
 func RestoreScreen(view *ViewHandle) {
 	if view.opts.TargetBuffer == SecondaryBuffer {
-		fmt.Fprint(view.tty, escPrimaryScreen)
+		fmt.Fprint(view.stdioManager.targetTTYStdout, escPrimaryScreen)
 	}
-	fmt.Fprint(view.tty, escShowCursor)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escDisableFocusTracking)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escDisableMouse)
+	fmt.Fprint(view.stdioManager.targetTTYStdout, escShowCursor)
 }
 
 func Render(view *ViewHandle, element *Element) {
@@ -142,26 +155,26 @@ func renderView(view *ViewHandle) {
 				continue
 			}
 
-			fmt.Fprintf(view.tty, escMoveCursor, y+r+1, x+c+1)
+			fmt.Fprintf(view.stdioManager.targetTTYStdout, escMoveCursor, y+r+1, x+c+1)
 
 			// Set colors
 			if cell.ForegroundColor != nil {
 				fgColor := toForegroundColorEsc(*cell.ForegroundColor)
 				if fgColor != prevFgColor {
-					fmt.Fprint(view.tty, fgColor)
+					fmt.Fprint(view.stdioManager.targetTTYStdout, fgColor)
 				}
 				prevFgColor = fgColor
 			}
 			if cell.BackgroundColor != nil {
 				bgColor := toBackgroundColorEsc(*cell.BackgroundColor)
 				if bgColor != prevBgColor {
-					fmt.Fprint(view.tty, bgColor)
+					fmt.Fprint(view.stdioManager.targetTTYStdout, bgColor)
 				}
 				prevBgColor = bgColor
 			}
 
 			// Set character
-			fmt.Fprint(view.tty, string(cell.Character))
+			fmt.Fprint(view.stdioManager.targetTTYStdout, string(cell.Character))
 		}
 	}
 

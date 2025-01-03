@@ -21,29 +21,15 @@ func NewScreenBuffer(x, y, width, height int) *ScreenBuffer {
 }
 
 func (sb *ScreenBuffer) MaybeResize(x, y, width, height int) {
-	if x != sb.X || y != sb.Y || width != sb.Width || height != sb.Height {
-		sb.X = x
-		sb.Y = y
-		sb.Width = width
-		sb.Height = height
-
-		oldX := sb.X
-		oldY := sb.Y
-		oldWidth := sb.Width
-		oldHeight := sb.Height
-		oldContent := sb.Cells
-		oldPrevCells := sb.PrevCells
-
-		sb.Cells = make([]ScreenCell, width*height)
-		sb.PrevCells = make([]ScreenCell, width*height)
-
-		for r := 0; r < min(height, oldHeight); r += 1 {
-			for c := 0; c < min(width, oldWidth); c += 1 {
-				sb.Cells[r*width+c] = oldContent[(r+oldY-y)*oldWidth+(c+oldX-x)]
-				sb.PrevCells[r*width+c] = oldPrevCells[(r+oldY-y)*oldWidth+(c+oldX-x)]
-			}
-		}
+	if sb.X == x && sb.Y == y && sb.Width == width && sb.Height == height {
+		return
 	}
+	sb.X = x
+	sb.Y = y
+	sb.Width = width
+	sb.Height = height
+	sb.Cells = make([]ScreenCell, width*height)
+	sb.PrevCells = make([]ScreenCell, width*height)
 }
 
 func (sb *ScreenBuffer) Set(x, y int, cell ScreenCell) {

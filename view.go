@@ -71,32 +71,42 @@ type ViewOpts struct {
 	DisableStdoutInterception bool
 }
 
-// Can be used to control rendering of the view.
+// Calling the View function returns a ViewHandle. ViewHandle provides
+// methods for controlling the view, and rendering it.
+//
+// ViewHandle internally uses StdioManager to manage the target TTY.
 type ViewHandle struct {
 	fn            func(ViewState) any
-	tty           *os.File
 	screenBuffer  *ScreenBuffer
 	lastFrameTime time.Time
 
+	opts   ViewOpts
 	x      int
 	y      int
 	width  int
 	height int
-	opts   ViewOpts
 	state  ViewState
+
+	stdioManager *StdioManager
 }
 
-// Contains information about the current state of the view.
+// Given to the render function for the view, ViewState contains information
+// about the state of the view, it's elements, and the frame being rendered.
 type ViewState struct {
 	elementIndex ElementIndex
 	deltaTime    float64
-	// events       any
+	events       []Event
 }
 
+// Returns the delta time between the current frame and the previous frame.
 func (v *ViewState) DeltaTime() float64 {
 	return v.deltaTime
 }
 
+// Returns the size of the view.
+//
+// Note that this is distinct from the size of the tty. The view may be
+// rendered into a smaller area of the terminal.
 func (v *ViewState) Size() Size {
 	element, ok := v.elementIndex[viewID]
 	if !ok {
@@ -108,6 +118,19 @@ func (v *ViewState) Size() Size {
 	}
 }
 
+// Allows querying the size of an element by its ID.
+//
+// The size is able to be retrieved because it uses the already calculated
+// size from the previous frame.
+//
+// WARNING: Because the size is from the previous frame, it will return a size
+// of 0 on the first frame. Be ware of this when using the size for
+// calculations.
+//
+// TODO:
+//   - We should replace this method with one that returns a ElementHandle.
+//   - ElementHandles should provide methods for querying the element's state,
+//     including the size.
 func (v *ViewState) ElementSize(id string) Size {
 	element, ok := v.elementIndex[id]
 	if !ok {
@@ -119,53 +142,58 @@ func (v *ViewState) ElementSize(id string) Size {
 	}
 }
 
-// Creates a new view and returns a handle to it.
+// Creates a ViewHandle with the given options and render function.
+//
+// The given render function will be called each frame to construct the view's
+// internal element tree. Render functions can return any renderable type.
+// Renderable types are:
+// - string     - converted to a TextRenderable.
+// - Renderable - any struct that implements the Renderable interface.
+// - []any      - a list of renderables. It's of any so the list can be mixed.
+// - nil        - nil can be used to skip rendering content.
 func View(opts ViewOpts, fn func(ViewState) any) *ViewHandle {
 	return &ViewHandle{
-		fn:   fn,
-		opts: opts,
+		opts:         opts,
+		fn:           fn,
+		stdioManager: NewStdioManager(opts.TTY),
 	}
 }
 
-// Binds the view to the terminal. This may involve switching to an alternate
-// screen buffer, switching to raw mode, etc.
+// Binds the view to the TTY.
+//
+// WARNING: It is possible to bind move than one view at a time, but views
+// should not overlap. Overlapping views will produce undefined behavior.
 func (v *ViewHandle) Bind() error {
-	if v.opts.TTY != nil {
-		v.tty = v.opts.TTY
-	} else {
-		v.tty = os.Stdout
+	if err := v.stdioManager.Bind(); err != nil {
+		return err
 	}
-	if !IsTTY(v.tty) {
-		return errors.New("cannot bind. The target is not a TTY")
-	}
-	var termWidth, termHeight int
-	if v.opts.Width == nil || v.opts.Height == nil {
-		termWidth, termHeight = MustGetTerminalSize(v.tty)
-	}
-	v.x = V(v.opts.X)
-	v.y = V(v.opts.Y)
-	v.width = VOr(v.opts.Width, termWidth)
-	v.height = VOr(v.opts.Height, termHeight)
-	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height)
 
+	v.x = VOr(v.opts.X, 0)
+	v.y = VOr(v.opts.Y, 0)
+	v.width = VOr(v.opts.Width, v.stdioManager.ttySize.Width)
+	v.height = VOr(v.opts.Height, v.stdioManager.ttySize.Height)
+	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height)
 	PrepareScreen(v)
 
 	return nil
 }
 
-// Unbinds the view from the terminal restoring the terminal to its previous
-// state.
-func (v *ViewHandle) Unbind() {
-	// MustRestoreTTYToNormal(v.tty, v.terminalState)
-
+// Unbinds the view from the TTY, restoring the TTY to its previous state.
+func (v *ViewHandle) Unbind() error {
 	RestoreScreen(v)
+	return v.stdioManager.Unbind()
 }
 
-// Renders a frame based on the current state of the view.
-func (v *ViewHandle) RenderFrame() error {
-	if v.tty == nil {
-		panic("cannot render. The view is not bound")
+// Should be called each frame, RenderFrame executes the view's render function,
+// constructing an internal element tree. It then flows layout and renders the
+// view.
+func (v *ViewHandle) RenderFrame() ([]Event, error) {
+	if !v.stdioManager.isBound {
+		return nil, errors.New("view is not bound to a TTY. Make sure to call Bind before rendering")
 	}
+
+	events := v.stdioManager.TakeEvents()
+	v.state.events = events
 
 	frameTime := time.Now()
 	if v.lastFrameTime.IsZero() {
@@ -176,20 +204,31 @@ func (v *ViewHandle) RenderFrame() error {
 
 	rootElement, elementIndex, err := ElementTreeAndIndexFromRenderable(&viewRenderable{view: v}, v.state)
 	if err != nil || rootElement == nil {
-		return err
+		return nil, err
 	}
 	v.state.elementIndex = elementIndex
+
+	if v.opts.Width == nil {
+		v.width = v.stdioManager.ttySize.Width
+	}
+	if v.opts.Height == nil {
+		v.height = v.stdioManager.ttySize.Height
+	}
 	rootElement.AvailableSize.Width = v.width
 	rootElement.AvailableSize.Height = v.height
 	rootElement.IntrinsicSize = rootElement.AvailableSize
 	rootElement.Size = rootElement.AvailableSize
 
+	v.screenBuffer.MaybeResize(v.x, v.y, v.width, v.height)
+
 	UpdateLayout(rootElement)
 	Render(v, rootElement)
 
-	return nil
+	return events, nil
 }
 
+// This struct is used to wrap the render function of the view, so it implements
+// the Renderable interface.
 type viewRenderable struct {
 	view *ViewHandle
 }

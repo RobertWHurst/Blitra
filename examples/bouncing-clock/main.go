@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/RobertWHurst/blitra"
 )
 
 func main() {
@@ -11,7 +14,11 @@ func main() {
 	if err := clockView.Bind(); err != nil {
 		panic(err)
 	}
-	defer clockView.Unbind()
+	defer func() {
+		if err := clockView.Unbind(); err != nil {
+			panic(err)
+		}
+	}()
 
 	osSignalChan := make(chan os.Signal, 1)
 	signal.Notify(osSignalChan, os.Interrupt)
@@ -24,9 +31,19 @@ loop:
 		default:
 		}
 
-		clockView.RenderFrame()
+		events, err := clockView.RenderFrame()
+		if err != nil {
+			panic(err)
+		}
+		for _, event := range events {
+			if event.Kind == blitra.CtrlKeyEvent && event.ModifiedChar == 'C' {
+				break loop
+			}
+		}
 
 		// 120 FPS
 		time.Sleep(time.Second / 120)
 	}
+
+	fmt.Println("Goodbye!")
 }
