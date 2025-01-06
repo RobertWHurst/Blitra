@@ -1,30 +1,51 @@
 package blitra
 
-// A visitor that calculates the intrinsic dimensions of an element.
-// Must be executed bottom-up; The sizing is derived from the children.
+// Calculates the intrinsic size of an element. If the element is text, then it
+// calculates the wrapped text size by the available size from the previous
+// phase, using it as the intrinsic size. If the element is a container, then
+// it calculates the intrinsic size based on the intrinsic size of its children,
+// plus the margins, padding, border, and gap.
 //
-// If the element is text, the intrinsic dimensions are calculated based on the
-// text size without size constraints.
-func IntrinsicSizingVisitor(element *Element) {
+// This visitor could run twice. It will run once during the second phase,
+// and possibly again during a reflow (occurs if dynamically sized elements
+// such as text require more space than they have after the final sizing phase).
+func IntrinsicSizingVisitor(element *Element, state *LayoutState) error {
 	if element.Parent == nil {
-		return
+		return nil
 	}
 
+	// If the element has a reflow size, then we use that as the intrinsic size.
+	if element.ReflowSize != nil {
+		element.IntrinsicSize = *element.ReflowSize
+		element.ReflowSize = nil
+		return nil
+	}
+
+	// If text, then we calculate the size the text would take if given
+	// all available space. This becomes the intrinsic size of the text.
 	if element.Kind == TextElementKind {
-		_, info := ApplyWrap(
+		_, info, err := ApplyWrap(
 			V(element.Style.TextWrap),
 			V(element.Style.Ellipsis),
 			element.AvailableSize,
 			element.SourceText,
 		)
+		if err != nil {
+			return err
+		}
 
 		element.IntrinsicSize = info.Size
-		return
+		return nil
 	}
+
+	// If a container, then we calculate it's intrinsic size based on it's
+	// children. We do so by summing their intrinsic sizes, then adding the
+	// margins, padding, border, and gap.
 
 	allChildrenWidth := 0
 	allChildrenHeight := 0
 	axis := V(element.Style.Axis)
+	gap := V(element.Style.Gap)
 
 	for childElement := range element.ChildrenIter {
 		childWidth := childElement.IntrinsicSize.Width
@@ -47,25 +68,14 @@ func IntrinsicSizingVisitor(element *Element) {
 
 	if element.ChildCount > 1 {
 		if axis == HorizontalAxis {
-			width += V(element.Style.Gap) * (element.ChildCount - 1)
+			width += gap * (element.ChildCount - 1)
 		} else {
-			height += V(element.Style.Gap) * (element.ChildCount - 1)
+			height += gap * (element.ChildCount - 1)
 		}
-	}
-
-	if element.Style.Width != nil {
-		width = *element.Style.Width
-	}
-	if element.Style.MinWidth != nil && width < *element.Style.MinWidth {
-		width = *element.Style.MinWidth
-	}
-	if element.Style.Height != nil {
-		height = *element.Style.Height
-	}
-	if element.Style.MinHeight != nil && height < *element.Style.MinHeight {
-		height = *element.Style.MinHeight
 	}
 
 	element.IntrinsicSize.Width = max(width, 0)
 	element.IntrinsicSize.Height = max(height, 0)
+
+	return nil
 }

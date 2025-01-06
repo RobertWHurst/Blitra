@@ -8,6 +8,13 @@ import (
 
 const viewID = "__ROOT__"
 
+type TargetBuffer int
+
+const (
+	PrimaryBuffer TargetBuffer = iota
+	SecondaryBuffer
+)
+
 // Options for controlling how a view is rendered.
 type ViewOpts struct {
 	// Axis controls the direction in which child elements are laid out.
@@ -188,6 +195,18 @@ func (v *ViewHandle) Unbind() error {
 // constructing an internal element tree. It then flows layout and renders the
 // view.
 func (v *ViewHandle) RenderFrame() ([]Event, error) {
+	// Ensure that if a panic occurs while rendering the view, we
+	// at least try restore the TTY to a usable state.
+	defer func() {
+		err := recover()
+		if err != nil {
+			if err2 := v.Unbind(); err2 != nil {
+				panic(err2)
+			}
+			panic(err)
+		}
+	}()
+
 	if !v.stdioManager.isBound {
 		return nil, errors.New("view is not bound to a TTY. Make sure to call Bind before rendering")
 	}
@@ -221,8 +240,12 @@ func (v *ViewHandle) RenderFrame() ([]Event, error) {
 
 	v.screenBuffer.MaybeResize(v.x, v.y, v.width, v.height)
 
-	UpdateLayout(rootElement)
-	Render(v, rootElement)
+	if err := UpdateLayout(rootElement); err != nil {
+		return nil, err
+	}
+	if err := Render(v, rootElement); err != nil {
+		return nil, err
+	}
 
 	return events, nil
 }

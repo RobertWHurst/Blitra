@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	escEnableMouse  = "\x1b[?1006h"
-	escDisableMouse = "\x1b[?1006l"
+	escEnableMouse  = "\x1b[?1000h\x1b[?1003h\x1b[?1006h"
+	escDisableMouse = "\x1b[?1006l\x1b[?1003l\x1b[?1000l"
 
 	escEnableFocusTracking  = "\x1b[?1004h"
 	escDisableFocusTracking = "\x1b[?1004l"
@@ -46,11 +46,16 @@ func RestoreScreen(view *ViewHandle) {
 	fmt.Fprint(view.stdioManager.targetTTYStdout, escShowCursor)
 }
 
-func Render(view *ViewHandle, element *Element) {
-	element.VisitContainerElementsDown(func(el *Element) {
+func Render(view *ViewHandle, rootElement *Element) error {
+	err := VisitElementsDown(rootElement, nil, func(el *Element, _ any) error {
 		renderElement(view, el)
+		return nil
 	})
+	if err != nil {
+		return err
+	}
 	renderView(view)
+	return nil
 }
 
 func renderElement(view *ViewHandle, element *Element) {
@@ -66,7 +71,7 @@ func renderBorders(view *ViewHandle, element *Element) {
 	height := element.Size.Height - V(element.Style.TopMargin) - V(element.Style.BottomMargin)
 
 	if element.Style.LeftBorder != nil {
-		bCells, bWidth, bHeight := strToCells(element.Style.LeftBorder.Left, element.Style, -1, -1)
+		bCells, bWidth, bHeight := strToCells(element.Style.LeftBorder.left, element.Style, -1, -1)
 		for r := 0; r < height; r += 1 {
 			for c := 0; c < bWidth; c += 1 {
 				rr := c % bHeight
@@ -75,7 +80,7 @@ func renderBorders(view *ViewHandle, element *Element) {
 		}
 	}
 	if element.Style.RightBorder != nil {
-		bCells, bWidth, bHeight := strToCells(element.Style.RightBorder.Right, element.Style, -1, -1)
+		bCells, bWidth, bHeight := strToCells(element.Style.RightBorder.right, element.Style, -1, -1)
 		for r := 0; r < height; r += 1 {
 			for c := 0; c < bWidth; c += 1 {
 				rr := c % bHeight
@@ -84,9 +89,9 @@ func renderBorders(view *ViewHandle, element *Element) {
 		}
 	}
 	if element.Style.TopBorder != nil {
-		lBCells, lBWidth, _ := strToCells(element.Style.TopBorder.TopLeft, element.Style, -1, -1)
-		rBCells, rBWidth, _ := strToCells(element.Style.TopBorder.TopRight, element.Style, -1, -1)
-		bCells, bWidth, bHeight := strToCells(element.Style.TopBorder.Top, element.Style, -1, -1)
+		lBCells, lBWidth, _ := strToCells(element.Style.TopBorder.topLeft, element.Style, -1, -1)
+		rBCells, rBWidth, _ := strToCells(element.Style.TopBorder.topRight, element.Style, -1, -1)
+		bCells, bWidth, bHeight := strToCells(element.Style.TopBorder.top, element.Style, -1, -1)
 		for r := 0; r < bHeight; r += 1 {
 			for c := 0; c < width; c += 1 {
 				if c < lBWidth {
@@ -103,9 +108,9 @@ func renderBorders(view *ViewHandle, element *Element) {
 		}
 	}
 	if element.Style.BottomBorder != nil {
-		lBCells, lBWidth, _ := strToCells(element.Style.BottomBorder.BottomLeft, element.Style, -1, -1)
-		rBCells, rBWidth, _ := strToCells(element.Style.BottomBorder.BottomRight, element.Style, -1, -1)
-		bCells, bWidth, bHeight := strToCells(element.Style.BottomBorder.Bottom, element.Style, -1, -1)
+		lBCells, lBWidth, _ := strToCells(element.Style.BottomBorder.bottomLeft, element.Style, -1, -1)
+		rBCells, rBWidth, _ := strToCells(element.Style.BottomBorder.bottomRight, element.Style, -1, -1)
+		bCells, bWidth, bHeight := strToCells(element.Style.BottomBorder.bottom, element.Style, -1, -1)
 		for r := 0; r < bHeight; r += 1 {
 			for c := 0; c < width; c += 1 {
 				if c < lBWidth {

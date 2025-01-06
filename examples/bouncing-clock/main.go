@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/RobertWHurst/blitra"
@@ -21,7 +22,7 @@ func main() {
 	}()
 
 	osSignalChan := make(chan os.Signal, 1)
-	signal.Notify(osSignalChan, os.Interrupt)
+	signal.Notify(osSignalChan, os.Interrupt, syscall.SIGTERM)
 
 loop:
 	for {
@@ -35,6 +36,9 @@ loop:
 		if err != nil {
 			panic(err)
 		}
+
+		DebugLogEvents(events)
+
 		for _, event := range events {
 			if event.Kind == blitra.CtrlKeyEvent && event.ModifiedChar == 'C' {
 				break loop

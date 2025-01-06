@@ -1,26 +1,31 @@
 package blitra
 
-// A visitor that calculates the final dimensions of an element. It uses the
-// intrinsic and available sizing calculated by the previous two visitors.
-// Must be executed bottom-up; The sizing is derived from the children as well
-// as previous visitor phases.
-//
-// If the element is text, the final dimensions are calculated based on the
-// text size after being wrapped to fit the available width.
-func FinalSizingVisitor(element *Element) {
+// Calculates the final size for an element's children based on the intrinsic
+// and available of the element. If the element is text, then it will re-wrap
+// the text to fit the available width.
+func FinalSizingVisitor(element *Element, state *LayoutState) error {
 
 	// If this element has text, calculate its final dimensions based on the
 	// text size after being wrapped to fit the available width.
 	if element.Kind == TextElementKind {
-		text, info := ApplyWrap(
+		text, info, err := ApplyWrap(
 			V(element.Style.TextWrap),
 			V(element.Style.Ellipsis),
-			element.AvailableSize,
+			Size{Width: element.Size.Width, Height: element.AvailableSize.Height},
 			element.SourceText,
 		)
+		if err != nil {
+			return err
+		}
+
+		if info.Size.Width > element.Size.Width || info.Size.Height > element.Size.Height {
+			element.ReflowSize = &info.Size
+			state.needsReflow = true
+			state.elementsToReflow = append(state.elementsToReflow, element)
+		}
 		element.Text = text
-		element.Size = info.Size
-		return
+
+		return nil
 	}
 
 	// Grab the element axis so we can use it when calculating the children.
@@ -100,7 +105,6 @@ func FinalSizingVisitor(element *Element) {
 			growHeight = remainderHeight / growCount
 		}
 	}
-
 	for childElement := range element.ChildrenIter {
 		childGrows := V(childElement.Style.Grow)
 
@@ -127,4 +131,6 @@ func FinalSizingVisitor(element *Element) {
 			childElement.Size.Height = childElement.AvailableSize.Height
 		}
 	}
+
+	return nil
 }

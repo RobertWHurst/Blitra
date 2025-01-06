@@ -30,6 +30,7 @@ type Element struct {
 	LastChild  *Element
 	ChildCount int
 
+	ReflowSize    *Size
 	IntrinsicSize Size
 	AvailableSize Size
 	SourceText    string
@@ -70,10 +71,8 @@ func ElementTreeAndIndexFromRenderable(renderable Renderable, state ViewState) (
 		case string:
 			element := &Element{
 				Kind:       TextElementKind,
-				ID:         v,
 				SourceText: v,
 			}
-			elementIndex[v] = element
 			head.parent.AddChild(element)
 			head = head.next
 
@@ -162,24 +161,6 @@ func (e *Element) ChildrenIter(yield func(*Element) bool) {
 	}
 }
 
-// Executes a visitor function on the element and each descendant depth-first,
-// top-down.
-func (e *Element) VisitContainerElementsUp(fn func(*Element)) {
-	e.traverseElements(nil, &fn)
-}
-
-// Executes a visitor function on the element and each descendant depth-first,
-// bottom-up.
-func (e *Element) VisitContainerElementsDown(fn func(*Element)) {
-	e.traverseElements(&fn, nil)
-}
-
-// Executes two visitor functions on the element and each descendant depth-first.
-// The first visitor is executed top-down and the second is executed bottom-up.
-func (e *Element) VisitContainerElementsDownThenUp(downFn, upFn func(*Element)) {
-	e.traverseElements(&downFn, &upFn)
-}
-
 func (e *Element) LeftMargin() int {
 	return V(e.Style.LeftMargin)
 }
@@ -197,27 +178,31 @@ func (e *Element) BottomMargin() int {
 }
 
 func (e *Element) LeftBorderWidth() int {
-	return VMap(e.Style.LeftBorder, func(b Border) int {
-		return len([]rune(b.Left))
-	})
+	if e.Style.LeftBorder == nil {
+		return 0
+	}
+	return e.Style.LeftBorder.LeftWidth()
 }
 
 func (e *Element) RightBorderWidth() int {
-	return VMap(e.Style.RightBorder, func(b Border) int {
-		return len([]rune(b.Right))
-	})
+	if e.Style.RightBorder == nil {
+		return 0
+	}
+	return e.Style.RightBorder.RightWidth()
 }
 
 func (e *Element) TopBorderHeight() int {
-	return VMap(e.Style.TopBorder, func(b Border) int {
-		return len([]rune(b.Top))
-	})
+	if e.Style.TopBorder == nil {
+		return 0
+	}
+	return e.Style.TopBorder.TopHeight()
 }
 
 func (e *Element) BottomBorderHeight() int {
-	return VMap(e.Style.BottomBorder, func(b Border) int {
-		return len([]rune(b.Bottom))
-	})
+	if e.Style.BottomBorder == nil {
+		return 0
+	}
+	return e.Style.BottomBorder.BottomHeight()
 }
 
 func (e *Element) LeftPadding() int {
@@ -252,13 +237,38 @@ func (e *Element) BottomEdge() int {
 	return e.BottomMargin() + e.BottomPadding() + e.BottomBorderHeight()
 }
 
-func (e *Element) traverseElements(downFn, upFn *func(*Element)) {
-	element := e
+// Executes a visitor function on the root element and each descendant depth-first,
+// top-down.
+func VisitElementsUp[S any](rootElement *Element, state S, fn func(*Element, S) error) error {
+	return traverseElementsFromRoot(rootElement, state, nil, &fn)
+}
+
+// Executes a visitor function on the root element and each descendant depth-first,
+// bottom-up.
+func VisitElementsDown[S any](rootElement *Element, state S, fn func(*Element, S) error) error {
+	return traverseElementsFromRoot(rootElement, state, &fn, nil)
+}
+
+// Executes two visitor functions on the element and each descendant depth-first.
+// The first visitor is executed top-down and the second is executed bottom-up.
+func VisitElementsDownThenUp[S any](rootElement *Element, state S, downFn, upFn func(*Element, S) error) error {
+	return traverseElementsFromRoot(rootElement, state, &downFn, &upFn)
+}
+
+func traverseElementsFromRoot[S any](rootElement *Element, state S, downFn, upFn *func(*Element, S) error) error {
+	if rootElement.Parent != nil {
+		return fmt.Errorf("element is not a root element")
+	}
+
+	element := rootElement
 
 loop:
 	for element != nil {
 		if downFn != nil {
-			(*downFn)(element)
+			err := (*downFn)(element, state)
+			if err != nil {
+				return err
+			}
 		}
 
 		if element.FirstChild != nil {
@@ -268,7 +278,10 @@ loop:
 
 		for element.Parent != nil {
 			if upFn != nil {
-				(*upFn)(element)
+				err := (*upFn)(element, state)
+				if err != nil {
+					return err
+				}
 			}
 			if element.Next != nil {
 				element = element.Next
@@ -279,9 +292,25 @@ loop:
 
 		if element.Parent == nil {
 			if upFn != nil {
-				(*upFn)(element)
+				err := (*upFn)(element, state)
+				if err != nil {
+					return err
+				}
 			}
 			break
 		}
+	}
+
+	return nil
+}
+
+func MergeElementVisitors[S any](visitors ...func(*Element, S) error) func(*Element, S) error {
+	return func(e *Element, s S) error {
+		for _, visitor := range visitors {
+			if err := visitor(e, s); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }

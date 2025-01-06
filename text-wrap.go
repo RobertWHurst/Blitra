@@ -1,6 +1,7 @@
 package blitra
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"unicode"
@@ -20,7 +21,12 @@ const (
 	NoWrap
 )
 
-func ApplyWrap(mode TextWrap, useEllipsis bool, size Size, text string) (string, WrapInfo) {
+type WrapInfo struct {
+	Size        Size
+	HasEllipsis bool
+}
+
+func ApplyWrap(mode TextWrap, useEllipsis bool, size Size, text string) (string, WrapInfo, error) {
 	switch mode {
 	case WordWrap:
 		return ApplyWordOrCharWrap(true, useEllipsis, size, text)
@@ -29,17 +35,14 @@ func ApplyWrap(mode TextWrap, useEllipsis bool, size Size, text string) (string,
 	case NoWrap:
 		return ApplyNoWrap(useEllipsis, size, text)
 	}
-	panic("Unknown TextWrap mode: " + reflect.TypeOf(mode).String())
+	return "", WrapInfo{}, fmt.Errorf("unknown TextWrap mode: %s", reflect.TypeOf(mode).String())
 }
 
-func ApplyWordOrCharWrap(useWordWrap bool, useEllipsis bool, size Size, text string) (string, WrapInfo) {
+func ApplyWordOrCharWrap(useWordWrap bool, useEllipsis bool, size Size, text string) (string, WrapInfo, error) {
 	maxWidth := size.Width
 	maxHeight := size.Height
 	if len(text) == 0 || maxWidth < 1 || maxHeight < 1 {
-		return text, WrapInfo{
-			Size:        size,
-			HasEllipsis: false,
-		}
+		return "", WrapInfo{}, nil
 	}
 
 	// Convert the text to a slice of runes, and append a newline rune
@@ -214,17 +217,14 @@ charLoop:
 			Height: len(textLines),
 		},
 		HasEllipsis: hasEllipsis,
-	}
+	}, nil
 }
 
-func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo) {
+func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo, error) {
 	maxWidth := size.Width
 	maxHeight := size.Height
 	if len(text) == 0 || maxWidth < 1 || maxHeight < 1 {
-		return text, WrapInfo{
-			Size:        size,
-			HasEllipsis: false,
-		}
+		return "", WrapInfo{}, nil
 	}
 
 	lines := [][]rune{}
@@ -271,9 +271,6 @@ func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo) {
 		// rest of the text until we reach a line break.
 		if len(line) == maxWidth-1 {
 			inTailOfTruncatedLine = true
-
-			// If using ellipsis, we will append it to the line and continue the loop.
-			// Otherwise, we allow the current rune to be appended to the line.
 			if useEllipsis {
 				line = append(line, '…')
 				lineHasEllipsis = true
@@ -296,10 +293,5 @@ func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo) {
 			Height: len(textLines),
 		},
 		HasEllipsis: hasEllipsis,
-	}
-}
-
-type WrapInfo struct {
-	Size        Size
-	HasEllipsis bool
+	}, nil
 }

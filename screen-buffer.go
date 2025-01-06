@@ -56,7 +56,6 @@ type ScreenCell struct {
 	Character       rune
 	ForegroundColor *string
 	BackgroundColor *string
-	// TODO: The following properties are not yet implemented.
 	Bold            *bool
 	Dim             *bool
 	Italic          *bool

@@ -1,8 +1,8 @@
 package blitra
 
-func PositioningVisitor(element *Element) {
-	if element.ChildCount == 0 {
-		return
+func PositioningVisitor(element *Element, state *LayoutState) error {
+	if element.ChildCount == 0 || state.needsReflow {
+		return nil
 	}
 
 	axis := V(element.Style.Axis)
@@ -125,4 +125,6 @@ func PositioningVisitor(element *Element) {
 			innerY += childElement.Size.Height + gap + justificationGap
 		}
 	}
+
+	return nil
 }

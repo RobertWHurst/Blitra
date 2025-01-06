@@ -5,6 +5,8 @@ type Key string
 // TODO: this only covers US keyboards. We may need to add more keys for other
 // keyboard layouts in the future.
 const (
+	NoKey Key = ""
+
 	ControlKey      Key = "control"
 	LeftControlKey  Key = "control:left"
 	RightControlKey Key = "control:right"
