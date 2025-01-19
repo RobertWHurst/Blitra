@@ -15,6 +15,15 @@ const (
 	TextElementKind
 )
 
+type ElementLayoutState struct {
+	ParentAxis Axis
+	Grow       int
+	Shrink     int
+	Basis      int
+	Size       int
+	Length     int
+}
+
 // Used by Biltra to represent each renderable as an element. Elements are
 // arranged in a tree structure and are traversed to compute layout and render
 // the final output.
@@ -30,7 +39,13 @@ type Element struct {
 	LastChild  *Element
 	ChildCount int
 
-	ReflowSize    *Size
+	ParentAxis   Axis
+	ParentGap    int
+	Length       int
+	Span         int
+	ShrinkFactor int
+	GrowFactor   int
+
 	IntrinsicSize Size
 	AvailableSize Size
 	SourceText    string

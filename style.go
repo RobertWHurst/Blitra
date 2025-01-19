@@ -2,7 +2,9 @@ package blitra
 
 // Style is a struct that contains all the style properties for an element.
 type Style struct {
-	Grow *bool
+	Grow   *int
+	Shrink *int
+	Basis  *int
 
 	Axis *Axis
 
