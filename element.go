@@ -2,6 +2,7 @@ package blitra
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 )
 
@@ -39,16 +40,13 @@ type Element struct {
 	LastChild  *Element
 	ChildCount int
 
-	ParentAxis   Axis
-	ParentGap    int
-	Length       int
-	Span         int
-	ShrinkFactor int
-	GrowFactor   int
-
+	// Based on how big the element wants to be. Includes children.
 	IntrinsicSize Size
+	// Based on how big the element can be. Constrained by parents and siblings.
 	AvailableSize Size
-	SourceText    string
+
+	SourceText      string
+	TextReflowWidth *int
 
 	Size     Size
 	Position Point
@@ -57,6 +55,10 @@ type Element struct {
 
 type ElementIndex map[string]*Element
 
+// Creates an element tree and element index from a renderable. A renderable is a struct that
+// implements the Renderable interface. The element tree is created by calling the Render method
+// of the renderable and traversing the result. The element index is a map of element IDs to elements.
+// The element index is used to quickly locate elements by ID.
 func ElementTreeAndIndexFromRenderable(renderable Renderable, state ViewState) (*Element, ElementIndex, error) {
 	elementIndex := map[string]*Element{}
 	rootElement := &Element{
@@ -176,6 +178,22 @@ func (e *Element) ChildrenIter(yield func(*Element) bool) {
 	}
 }
 
+func (e *Element) Axis() Axis {
+	return VOr(e.Style.Axis, HorizontalAxis)
+}
+
+func (e *Element) Gap() int {
+	return V(e.Style.Gap)
+}
+
+func (e *Element) Grow() int {
+	return max(V(e.Style.Grow), 0)
+}
+
+func (e *Element) Shrink() int {
+	return max(VOr(e.Style.Shrink, 1), 0)
+}
+
 func (e *Element) LeftMargin() int {
 	return V(e.Style.LeftMargin)
 }
@@ -190,6 +208,14 @@ func (e *Element) TopMargin() int {
 
 func (e *Element) BottomMargin() int {
 	return V(e.Style.BottomMargin)
+}
+
+func (e *Element) HorizontalMargin() int {
+	return e.LeftMargin() + e.RightMargin()
+}
+
+func (e *Element) VerticalMargin() int {
+	return e.TopMargin() + e.BottomMargin()
 }
 
 func (e *Element) LeftBorderWidth() int {
@@ -252,25 +278,65 @@ func (e *Element) BottomEdge() int {
 	return e.BottomMargin() + e.BottomPadding() + e.BottomBorderHeight()
 }
 
+func (e *Element) HorizontalEdge() int {
+	return e.LeftEdge() + e.RightEdge()
+}
+
+func (e *Element) VerticalEdge() int {
+	return e.TopEdge() + e.BottomEdge()
+}
+
+func (e *Element) AssignedWidth() *int {
+	if e.Style.Width == nil {
+		return nil
+	}
+	width := e.clampWidth(V(e.Style.Width))
+	return &width
+}
+
+func (e *Element) AssignedHeight() *int {
+	if e.Style.Height == nil {
+		return nil
+	}
+	height := e.clampHeight(V(e.Style.Height))
+	return &height
+}
+
+func (e *Element) clampWidth(width int) int {
+	minWidth := V(e.Style.MinWidth)
+	maxWidth := VOr(e.Style.MaxWidth, math.MaxInt)
+	return max(min(width, maxWidth), minWidth)
+}
+
+func (e *Element) clampHeight(height int) int {
+	minHeight := V(e.Style.MinHeight)
+	maxHeight := VOr(e.Style.MaxHeight, math.MaxInt)
+	return max(min(height, maxHeight), minHeight)
+}
+
+func (e *Element) TextWrap() TextWrap {
+	return VOr(e.Style.TextWrap, WordWrap)
+}
+
+func (e *Element) Ellipsis() bool {
+	return VOr(e.Style.Ellipsis, true)
+}
+
 // Executes a visitor function on the root element and each descendant depth-first,
 // top-down.
 func VisitElementsUp[S any](rootElement *Element, state S, fn func(*Element, S) error) error {
-	return traverseElementsFromRoot(rootElement, state, nil, &fn)
+	return VisitElementsDownThenUp(rootElement, state, nil, fn)
 }
 
 // Executes a visitor function on the root element and each descendant depth-first,
 // bottom-up.
 func VisitElementsDown[S any](rootElement *Element, state S, fn func(*Element, S) error) error {
-	return traverseElementsFromRoot(rootElement, state, &fn, nil)
+	return VisitElementsDownThenUp(rootElement, state, fn, nil)
 }
 
 // Executes two visitor functions on the element and each descendant depth-first.
 // The first visitor is executed top-down and the second is executed bottom-up.
 func VisitElementsDownThenUp[S any](rootElement *Element, state S, downFn, upFn func(*Element, S) error) error {
-	return traverseElementsFromRoot(rootElement, state, &downFn, &upFn)
-}
-
-func traverseElementsFromRoot[S any](rootElement *Element, state S, downFn, upFn *func(*Element, S) error) error {
 	if rootElement.Parent != nil {
 		return fmt.Errorf("element is not a root element")
 	}
@@ -280,7 +346,7 @@ func traverseElementsFromRoot[S any](rootElement *Element, state S, downFn, upFn
 loop:
 	for element != nil {
 		if downFn != nil {
-			err := (*downFn)(element, state)
+			err := downFn(element, state)
 			if err != nil {
 				return err
 			}
@@ -293,7 +359,7 @@ loop:
 
 		for element.Parent != nil {
 			if upFn != nil {
-				err := (*upFn)(element, state)
+				err := upFn(element, state)
 				if err != nil {
 					return err
 				}
@@ -307,7 +373,7 @@ loop:
 
 		if element.Parent == nil {
 			if upFn != nil {
-				err := (*upFn)(element, state)
+				err := upFn(element, state)
 				if err != nil {
 					return err
 				}

@@ -179,7 +179,7 @@ func (v *ViewHandle) Bind() error {
 	v.y = VOr(v.opts.Y, 0)
 	v.width = VOr(v.opts.Width, v.stdioManager.ttySize.Width)
 	v.height = VOr(v.opts.Height, v.stdioManager.ttySize.Height)
-	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height)
+	v.screenBuffer = NewScreenBuffer(v.x, v.y, v.width, v.height, v.stdioManager.targetTTYStdout)
 	PrepareScreen(v)
 
 	return nil
@@ -233,14 +233,14 @@ func (v *ViewHandle) RenderFrame() ([]Event, error) {
 	if v.opts.Height == nil {
 		v.height = v.stdioManager.ttySize.Height
 	}
-	rootElement.AvailableSize.Width = v.width
-	rootElement.AvailableSize.Height = v.height
-	rootElement.IntrinsicSize = rootElement.AvailableSize
+	rootElement.IntrinsicSize.Width = v.width
+	rootElement.IntrinsicSize.Height = v.height
+	rootElement.AvailableSize = rootElement.IntrinsicSize
 	rootElement.Size = rootElement.AvailableSize
 
 	v.screenBuffer.MaybeResize(v.x, v.y, v.width, v.height)
 
-	if err := UpdateLayout(rootElement); err != nil {
+	if err := Flow(rootElement); err != nil {
 		return nil, err
 	}
 	if err := Render(v, rootElement); err != nil {

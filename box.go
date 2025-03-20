@@ -8,13 +8,18 @@ type BoxRenderable struct {
 
 type BoxOpts struct {
 
-	// If true the box will grow to fill any available space, not desired by
-	// siblings.
-	Grow *bool
-
 	// Can be set to vertical or horizontal with a default of horizontal.
 	// Determines the axis that the children elements will be laid out on.
 	Axis *Axis
+
+	Grow *int
+
+	Shrink *int
+
+	// The alignment of the box's children. Defaults to stretch.
+	Align *Align
+	// The justification of the box's children. Defaults to stretch.
+	Justify *Justify
 
 	// How many empty columns to the left of the box's children.
 	LeftPadding *int
@@ -61,11 +66,6 @@ type BoxOpts struct {
 	// The maximum height of the box in rows. If 0 the maximum height will be
 	// determined automatically.
 	MaxHeight *int
-
-	// The alignment of the box's children. Defaults to stretch.
-	Align *Align
-	// The justification of the box's children. Defaults to stretch.
-	Justify *Justify
 
 	// The border style of the top of the box.
 	LeftBorder *Border
@@ -153,6 +153,9 @@ func (b *BoxRenderable) Style() Style {
 
 // Implements the Renderable interface.
 func (b *BoxRenderable) Render(state ViewState) any {
+	if b.fn == nil {
+		return nil
+	}
 	boxState := BoxState{}
 	return b.fn(boxState)
 }

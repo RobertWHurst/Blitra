@@ -22,8 +22,9 @@ const (
 )
 
 type WrapInfo struct {
-	Size        Size
-	HasEllipsis bool
+	Size                  Size
+	HasEllipsis           bool
+	IsVerticallyTruncated bool
 }
 
 func ApplyWrap(mode TextWrap, useEllipsis bool, size Size, text string) (string, WrapInfo, error) {
@@ -76,6 +77,7 @@ func ApplyWordOrCharWrap(useWordWrap bool, useEllipsis bool, size Size, text str
 		word        []rune
 		width       int
 		hasEllipsis bool
+		isTruncated bool
 	)
 
 charLoop:
@@ -123,6 +125,7 @@ charLoop:
 					width = lineLen
 				}
 				lines = append(lines, line)
+				isTruncated = true
 				break charLoop
 			}
 
@@ -216,7 +219,8 @@ charLoop:
 			Width:  width,
 			Height: len(textLines),
 		},
-		HasEllipsis: hasEllipsis,
+		HasEllipsis:           hasEllipsis,
+		IsVerticallyTruncated: isTruncated,
 	}, nil
 }
 
@@ -233,6 +237,7 @@ func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo, er
 	inTailOfTruncatedLine := false
 	lineHasEllipsis := false
 	hasEllipsis := false
+	isTruncated := false
 	for _, r := range text + "\n" {
 		isLineBreak := r == '\n'
 
@@ -250,6 +255,7 @@ func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo, er
 					width = lineLen
 				}
 				lines = append(lines, line)
+				isTruncated = true
 				break
 			}
 			lineLen := len(line)
@@ -292,6 +298,7 @@ func ApplyNoWrap(useEllipsis bool, size Size, text string) (string, WrapInfo, er
 			Width:  width,
 			Height: len(textLines),
 		},
-		HasEllipsis: hasEllipsis,
+		HasEllipsis:           hasEllipsis,
+		IsVerticallyTruncated: isTruncated,
 	}, nil
 }

@@ -56,12 +56,14 @@ var viewStyle = b.ViewOpts{
 	BackgroundColor: b.P("#002"),
 	TargetBuffer:    b.SecondaryBuffer,
 	Align:           b.P(b.StartAlign),
+	Axis:            b.P(b.VerticalAxis),
 }
 
 var appStyle = b.BoxOpts{
 	Axis:  b.P(b.VerticalAxis),
 	Gap:   b.P(2),
 	Align: b.P(b.CenterAlign),
+	Grow:  b.P(1),
 }
 
 var clockStyle = b.BoxOpts{
