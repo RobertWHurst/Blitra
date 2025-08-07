@@ -32,9 +32,11 @@ func finalizeText(el *Element, reflow *bool) error {
 			el.TextReflowWidth = &el.AvailableSize.Width
 			*reflow = true
 		}
-	} else {
+	}
+	if !*reflow {
 		el.Text = text
 		el.TextReflowWidth = nil
+		el.Size = wrapInfo.Size
 	}
 
 	return nil

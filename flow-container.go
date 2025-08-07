@@ -200,18 +200,20 @@ func calcAvailableContainerSizesForChildren(el *Element) error {
 			}
 			targetLength := fractionalLength * targetScalar
 			if axis == HorizontalAxis {
-				desiredWidth := cEl.AvailableSize.Width + targetLength
+				currentWidth := cEl.AvailableSize.Width
+				desiredWidth := currentWidth + targetLength
 				cEl.AvailableSize.Width = cEl.clampWidth(desiredWidth)
-				axisLengthDelta -= cEl.AvailableSize.Width
+				axisLengthDelta -= cEl.AvailableSize.Width - currentWidth
 				if desiredWidth != cEl.AvailableSize.Width {
 					targetEls = slices.Delete(targetEls, i, i+1)
 					i -= 1
 					targetDivisor -= targetScalar
 				}
 			} else {
-				desiredHeight := cEl.AvailableSize.Height + targetLength
+				currentHeight := cEl.AvailableSize.Height
+				desiredHeight := currentHeight + targetLength
 				cEl.AvailableSize.Height = cEl.clampHeight(desiredHeight)
-				axisLengthDelta -= cEl.AvailableSize.Height
+				axisLengthDelta -= cEl.AvailableSize.Height - currentHeight
 				if desiredHeight != cEl.AvailableSize.Height {
 					targetEls = slices.Delete(targetEls, i, i+1)
 					i -= 1

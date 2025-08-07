@@ -107,19 +107,32 @@ charLoop:
 			// If this is the last possible line, add as much of the word as
 			// possible.
 			if len(lines) == maxHeight-1 {
-				partialWordLen := maxWidth - len(line)
+				partialWordLen := maxWidth - len(line) - 1
 				if useEllipsis {
 					partialWordLen -= 1
 				}
 				partialWord := word[0:partialWordLen]
 				if useEllipsis {
-					partialWord = append(partialWord, '…')
+					if partialWordLen == 0 {
+						for len(line) != 0 {
+							lastChar := line[len(line)-1]
+							if unicode.IsNumber(lastChar) || unicode.IsLetter(lastChar) {
+								break
+							}
+							line = line[:len(line)-1]
+						}
+					}
 					hasEllipsis = true
 				}
-				if len(line) != 0 {
+				if len(line) != 0 && len(partialWord) != 0 {
 					line = append(line, ' ')
 				}
-				line = append(line, partialWord...)
+				if len(partialWord) != 0 {
+					line = append(line, partialWord...)
+				}
+				if hasEllipsis {
+					line = append(line, '…')
+				}
 				lineLen := len(line)
 				if lineLen > width {
 					width = lineLen

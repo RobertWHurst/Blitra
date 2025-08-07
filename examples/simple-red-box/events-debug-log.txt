@@ -1973,3 +1973,141 @@ MouseMoveEvent: x=50, y=6
 MouseMoveEvent: x=39, y=4
 MouseMoveEvent: x=31, y=2
 BlurEvent
+BlurEvent
+BlurEvent
+MouseMoveEvent: x=64, y=1
+MouseMoveEvent: x=64, y=3
+MouseMoveEvent: x=64, y=5
+MouseMoveEvent: x=64, y=6
+MouseMoveEvent: x=65, y=7
+MouseMoveEvent: x=65, y=8
+MouseMoveEvent: x=66, y=9
+FocusEvent
+MouseDownEvent: button=1, x=66, y=9
+MouseUpEvent: button=1, x=66, y=9
+MouseMoveEvent: x=66, y=9
+CtrlKeyEvent: C
+BlurEvent
+MouseMoveEvent: x=72, y=1
+MouseMoveEvent: x=73, y=3
+MouseMoveEvent: x=73, y=4
+MouseMoveEvent: x=73, y=5
+MouseMoveEvent: x=73, y=6
+MouseMoveEvent: x=72, y=7
+MouseMoveEvent: x=71, y=7
+MouseMoveEvent: x=71, y=8
+MouseMoveEvent: x=70, y=8
+MouseMoveEvent: x=69, y=8
+MouseMoveEvent: x=68, y=8
+FocusEvent
+MouseDownEvent: button=1, x=68, y=8
+MouseMoveEvent: button=1, x=68, y=8
+MouseUpEvent: button=1, x=68, y=8
+MouseMoveEvent: x=68, y=8
+MouseMoveEvent: x=69, y=8
+MouseMoveEvent: x=68, y=8
+MouseMoveEvent: x=66, y=7
+MouseMoveEvent: x=65, y=7
+MouseMoveEvent: x=63, y=6
+MouseMoveEvent: x=62, y=5
+MouseMoveEvent: x=60, y=5
+MouseMoveEvent: x=58, y=4
+MouseMoveEvent: x=57, y=4
+MouseMoveEvent: x=56, y=3
+MouseMoveEvent: x=55, y=3
+MouseMoveEvent: x=55, y=2
+MouseMoveEvent: x=55, y=1
+MouseMoveEvent: x=54, y=1
+MouseMoveEvent: x=1, y=7
+MouseMoveEvent: x=1, y=8
+MouseMoveEvent: x=1, y=9
+MouseMoveEvent: x=1, y=10
+MouseMoveEvent: x=1, y=11
+MouseMoveEvent: x=1, y=12
+BlurEvent
+MouseMoveEvent: x=18, y=1
+MouseMoveEvent: x=19, y=2
+MouseMoveEvent: x=19, y=3
+MouseMoveEvent: x=20, y=4
+MouseMoveEvent: x=20, y=5
+MouseMoveEvent: x=20, y=6
+MouseMoveEvent: x=21, y=6
+MouseMoveEvent: x=21, y=7
+MouseMoveEvent: x=21, y=8
+MouseMoveEvent: x=21, y=9
+MouseMoveEvent: x=22, y=9
+MouseMoveEvent: x=22, y=10
+MouseMoveEvent: x=23, y=10
+MouseMoveEvent: x=24, y=10
+MouseMoveEvent: x=25, y=11
+MouseMoveEvent: x=27, y=11
+MouseMoveEvent: x=28, y=11
+MouseMoveEvent: x=29, y=12
+MouseMoveEvent: x=31, y=12
+MouseMoveEvent: x=32, y=12
+MouseMoveEvent: x=33, y=12
+MouseMoveEvent: x=34, y=12
+MouseMoveEvent: x=35, y=12
+MouseMoveEvent: x=34, y=12
+MouseMoveEvent: x=39, y=11
+MouseMoveEvent: x=45, y=11
+MouseMoveEvent: x=54, y=10
+MouseMoveEvent: x=61, y=9
+MouseMoveEvent: x=68, y=7
+MouseMoveEvent: x=73, y=6
+MouseMoveEvent: x=75, y=5
+MouseMoveEvent: x=75, y=4
+MouseMoveEvent: x=75, y=3
+MouseMoveEvent: x=74, y=1
+BlurEvent
+MouseMoveEvent: x=38, y=4
+MouseMoveEvent: x=36, y=5
+MouseMoveEvent: x=33, y=7
+MouseMoveEvent: x=31, y=7
+MouseMoveEvent: x=30, y=8
+MouseMoveEvent: x=28, y=8
+MouseMoveEvent: x=28, y=9
+MouseMoveEvent: x=27, y=9
+MouseMoveEvent: x=26, y=9
+MouseMoveEvent: x=25, y=9
+MouseMoveEvent: x=23, y=10
+MouseMoveEvent: x=22, y=10
+MouseMoveEvent: x=21, y=11
+MouseMoveEvent: x=20, y=11
+MouseMoveEvent: x=19, y=11
+MouseMoveEvent: x=18, y=11
+MouseMoveEvent: x=18, y=12
+MouseMoveEvent: x=17, y=12
+MouseMoveEvent: x=16, y=12
+MouseMoveEvent: x=17, y=12
+MouseMoveEvent: x=18, y=12
+MouseMoveEvent: x=18, y=11
+MouseMoveEvent: x=19, y=11
+MouseMoveEvent: x=20, y=11
+MouseMoveEvent: x=21, y=11
+MouseMoveEvent: x=22, y=11
+MouseMoveEvent: x=23, y=11
+MouseMoveEvent: x=24, y=11
+MouseMoveEvent: x=25, y=11
+MouseMoveEvent: x=26, y=11
+MouseMoveEvent: x=27, y=11
+MouseMoveEvent: x=28, y=11
+MouseMoveEvent: x=29, y=11
+MouseMoveEvent: x=30, y=11
+MouseMoveEvent: x=31, y=11
+MouseMoveEvent: x=32, y=11
+MouseMoveEvent: x=33, y=11
+MouseMoveEvent: x=34, y=11
+MouseMoveEvent: x=36, y=11
+MouseMoveEvent: x=37, y=11
+MouseMoveEvent: x=39, y=11
+MouseMoveEvent: x=40, y=11
+MouseMoveEvent: x=42, y=11
+MouseMoveEvent: x=43, y=11
+MouseMoveEvent: x=44, y=11
+MouseMoveEvent: x=45, y=11
+MouseMoveEvent: x=46, y=11
+FocusEvent
+MouseDownEvent: button=1, x=46, y=11
+MouseUpEvent: button=1, x=46, y=11
+CtrlKeyEvent: C

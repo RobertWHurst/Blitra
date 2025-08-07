@@ -25,4 +25,6 @@ var redBoxStyle = b.BoxOpts{
 	Width:           b.P(20),
 	Height:          b.P(10),
 	BackgroundColor: b.P("#f00"),
+	TextColor:       b.P("#fff"),
+	Ellipsis:        b.P(true),
 }
